@@ -277,9 +277,6 @@ router.post('/', [
   // TODO: Upload des images vers Cloudinary
   const images = [];
   if (req.files && req.files.length > 0) {
-    // const cloudinaryUploads = await uploadImagesToCloudinary(req.files);
-    // images.push(...cloudinaryUploads);
-    
     // Pour l'instant, utiliser des URLs de placeholder
     req.files.forEach((file, index) => {
       images.push({

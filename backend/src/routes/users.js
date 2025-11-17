@@ -3,7 +3,7 @@ const User = require('../models/User');
 const { auth, authorize } = require('../middleware/auth');
 const { validateInput, validateObjectId, validatePagination } = require('../middleware/validation');
 const { asyncHandler } = require('../middleware/errorHandler');
-const { changePasswordValidation } = require('../validations/authValidation');
+const { requestVendorStatusValidation } = require('../validations/authValidation');
 
 const router = express.Router();
 
@@ -89,46 +89,6 @@ router.put('/profile', auth, asyncHandler(async (req, res) => {
     success: true,
     message: 'Profil mis à jour avec succès',
     data: { user: updatedUser }
-  });
-}));
-
-/**
- * @route   PUT /api/users/change-password
- * @desc    Changer le mot de passe
- * @access  Private
- */
-router.put('/change-password', [
-  auth,
-  validateInput(changePasswordValidation)
-], asyncHandler(async (req, res) => {
-  const { currentPassword, newPassword } = req.body;
-
-  const user = await User.findById(req.user.userId).select('+password');
-
-  if (!user) {
-    return res.status(404).json({
-      success: false,
-      message: 'Utilisateur introuvable'
-    });
-  }
-
-  // Vérifier le mot de passe actuel
-  const isCurrentPasswordValid = await user.comparePassword(currentPassword);
-
-  if (!isCurrentPasswordValid) {
-    return res.status(400).json({
-      success: false,
-      message: 'Mot de passe actuel incorrect'
-    });
-  }
-
-  // Mettre à jour le mot de passe
-  user.password = newPassword;
-  await user.save();
-
-  res.json({
-    success: true,
-    message: 'Mot de passe modifié avec succès'
   });
 }));
 
@@ -492,6 +452,203 @@ router.get('/stats', [
       },
       monthly: monthlyStats
     }
+  });
+}));
+
+/**
+ * @route   POST /api/users/request-vendor-status
+ * @desc    Demander le statut vendeur (client → vendeur)
+ * @access  Private (Client uniquement)
+ */
+router.post('/request-vendor-status', auth, asyncHandler(async (req, res) => {
+  // Validation Joi
+  const { error, value } = requestVendorStatusValidation.validate(req.body);
+  if (error) {
+    return res.status(400).json({
+      success: false,
+      error: 'Erreur de validation',
+      code: 'VALIDATION_ERROR',
+      details: error.details.map(d => ({
+        field: d.path.join('.'),
+        message: d.message
+      }))
+    });
+  }
+
+  const { businessName, description, category } = value;
+
+  const user = await User.findById(req.user.userId);
+
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      error: 'Utilisateur introuvable',
+      code: 'USER_NOT_FOUND'
+    });
+  }
+
+  // Vérifier que l'utilisateur est un client
+  if (user.role !== 'client') {
+    return res.status(403).json({
+      success: false,
+      error: 'Seuls les clients peuvent demander le statut vendeur',
+      code: 'INVALID_ROLE'
+    });
+  }
+
+  // Vérifier s'il n'y a pas déjà une demande en attente
+  if (user.vendorInfo && user.vendorInfo.validationStatus === 'pending') {
+    return res.status(409).json({
+      success: false,
+      error: 'Une demande est déjà en cours de traitement',
+      code: 'REQUEST_PENDING'
+    });
+  }
+
+  // Créer la demande vendeur
+  user.vendorInfo = {
+    businessName,
+    description,
+    category,
+    validationStatus: 'pending',
+    requestedAt: new Date()
+  };
+
+  await user.save();
+
+  console.log('[VENDOR] Demande vendeur créée:', { userId: user._id, businessName });
+
+  res.json({
+    success: true,
+    message: 'Votre demande a été envoyée. Un administrateur va l\'examiner.',
+    data: {
+      vendorInfo: user.vendorInfo
+    }
+  });
+}));
+
+/**
+ * @route   GET /api/users/notifications
+ * @desc    Récupérer les notifications de l'utilisateur
+ * @access  Private
+ */
+router.get('/notifications', auth, asyncHandler(async (req, res) => {
+  const { unreadOnly } = req.query;
+
+  const user = await User.findById(req.user.userId).select('notifications');
+
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      error: 'Utilisateur introuvable',
+      code: 'USER_NOT_FOUND'
+    });
+  }
+
+  let notifications = user.notifications || [];
+
+  // Filtrer les non-lues si demandé
+  if (unreadOnly === 'true') {
+    notifications = notifications.filter(n => !n.read);
+  }
+
+  // Trier par date décroissante
+  notifications.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  res.json({
+    success: true,
+    data: {
+      notifications,
+      unreadCount: notifications.filter(n => !n.read).length
+    }
+  });
+}));
+
+/**
+ * @route   PUT /api/users/notifications/:notificationId/read
+ * @desc    Marquer une notification comme lue
+ * @access  Private
+ */
+router.put('/notifications/:notificationId/read', auth, asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user.userId);
+
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      error: 'Utilisateur introuvable',
+      code: 'USER_NOT_FOUND'
+    });
+  }
+
+  const notification = user.notifications.id(req.params.notificationId);
+
+  if (!notification) {
+    return res.status(404).json({
+      success: false,
+      error: 'Notification introuvable',
+      code: 'NOTIFICATION_NOT_FOUND'
+    });
+  }
+
+  notification.read = true;
+  await user.save();
+
+  res.json({
+    success: true,
+    message: 'Notification marquée comme lue'
+  });
+}));
+
+/**
+ * @route   PUT /api/users/notifications/read-all
+ * @desc    Marquer toutes les notifications comme lues
+ * @access  Private
+ */
+router.put('/notifications/read-all', auth, asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user.userId);
+
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      error: 'Utilisateur introuvable',
+      code: 'USER_NOT_FOUND'
+    });
+  }
+
+  user.notifications.forEach(n => {
+    n.read = true;
+  });
+
+  await user.save();
+
+  res.json({
+    success: true,
+    message: 'Toutes les notifications ont été marquées comme lues'
+  });
+}));
+
+/**
+ * @route   DELETE /api/users/notifications/:notificationId
+ * @desc    Supprimer une notification
+ * @access  Private
+ */
+router.delete('/notifications/:notificationId', auth, asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user.userId);
+
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      error: 'Utilisateur introuvable',
+      code: 'USER_NOT_FOUND'
+    });
+  }
+
+  user.notifications.pull(req.params.notificationId);
+  await user.save();
+
+  res.json({
+    success: true,
+    message: 'Notification supprimée'
   });
 }));
 

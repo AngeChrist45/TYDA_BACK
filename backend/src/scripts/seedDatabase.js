@@ -27,22 +27,20 @@ const seedData = {
     {
       firstName: 'Admin',
       lastName: 'TYDA',
-      email: 'admin@tydavente.com',
-      password: 'Admin@123456',
       phone: '+22507000000',
+      pin: '1234', // Sera hashé
       role: 'admin',
-      status: 'actif',
-      emailVerified: true
+      accountStatus: 'active',
+      phoneVerified: true
     },
     {
       firstName: 'Kofi',
       lastName: 'Asante',
-      email: 'kofi.asante@email.com',
-      password: 'Vendeur@123',
       phone: '+22507111111',
+      pin: '1234', // Sera hashé
       role: 'vendeur',
-      status: 'actif',
-      emailVerified: true,
+      accountStatus: 'active',
+      phoneVerified: true,
       vendorInfo: {
         businessName: 'Boutique Kofi',
         businessDescription: 'Vente de vêtements traditionnels et modernes de qualité',
@@ -58,12 +56,11 @@ const seedData = {
     {
       firstName: 'Aya',
       lastName: 'Traoré',
-      email: 'aya.traore@email.com',
-      password: 'Vendeur@123',
       phone: '+22507222222',
+      pin: '1234', // Sera hashé
       role: 'vendeur',
-      status: 'actif',
-      emailVerified: true,
+      accountStatus: 'active',
+      phoneVerified: true,
       vendorInfo: {
         businessName: 'Aya Electronics',
         businessDescription: 'Électronique et accessoires high-tech',
@@ -79,12 +76,11 @@ const seedData = {
     {
       firstName: 'Mamadou',
       lastName: 'Coulibaly',
-      email: 'mamadou.coulibaly@email.com',
-      password: 'Client@123',
       phone: '+22507333333',
+      pin: '1234', // Sera hashé
       role: 'client',
-      status: 'actif',
-      emailVerified: true,
+      accountStatus: 'active',
+      phoneVerified: true,
       address: {
         street: 'Quartier Résidentiel',
         city: 'Bouaké',
@@ -95,12 +91,11 @@ const seedData = {
     {
       firstName: 'Fatou',
       lastName: 'Diallo',
-      email: 'fatou.diallo@email.com',
-      password: 'Client@123',
       phone: '+22507444444',
+      pin: '1234', // Sera hashé
       role: 'client',
-      status: 'actif',
-      emailVerified: true,
+      accountStatus: 'active',
+      phoneVerified: true,
       address: {
         street: 'Rue de la Paix',
         city: 'Yamoussoukro',
@@ -112,15 +107,15 @@ const seedData = {
     {
       firstName: 'Ibrahim',
       lastName: 'Ouattara',
-      email: 'ibrahim.ouattara@email.com',
-      password: 'Vendeur@123',
       phone: '+22507555555',
-      role: 'vendeur',
-      status: 'en_attente',
-      emailVerified: true,
+      pin: '1234', // Sera hashé
+      role: 'client', // Commence en client
+      accountStatus: 'active',
+      phoneVerified: true,
       vendorInfo: {
         businessName: 'Ibrahim Marketplace',
-        businessDescription: 'Commerce général et produits locaux'
+        businessDescription: 'Commerce général et produits locaux',
+        requestedAt: new Date() // Demande en attente
       }
     }
   ],
@@ -212,8 +207,8 @@ const seedData = {
 
 // Produits exemples
 const getProductsData = (users, categories) => {
-  const vendor1 = users.find(u => u.email === 'kofi.asante@email.com');
-  const vendor2 = users.find(u => u.email === 'aya.traore@email.com');
+  const vendor1 = users.find(u => u.phone === '+22507111111'); // Kofi
+  const vendor2 = users.find(u => u.phone === '+22507222222'); // Aya
   const modeCategory = categories.find(c => c.name === 'Mode & Vêtements');
   const electronicsCategory = categories.find(c => c.name === 'Électronique');
   const maisonCategory = categories.find(c => c.name === 'Maison & Jardin');
@@ -388,8 +383,8 @@ const seedDatabase = async () => {
     const hashedUsers = await Promise.all(
       seedData.users.map(async (user) => {
         const salt = await bcrypt.genSalt(12);
-        const hashedPassword = await bcrypt.hash(user.password, salt);
-        return { ...user, password: hashedPassword };
+        const hashedPin = await bcrypt.hash(user.pin, salt);
+        return { ...user, pin: hashedPin };
       })
     );
 
@@ -399,7 +394,7 @@ const seedDatabase = async () => {
     // Assigner l'admin comme validateur des vendeurs actifs
     const admin = users.find(u => u.role === 'admin');
     for (const user of users) {
-      if (user.role === 'vendeur' && user.status === 'actif') {
+      if (user.role === 'vendeur' && user.accountStatus === 'active') {
         user.vendorInfo.validatedBy = admin._id;
         await user.save();
       }

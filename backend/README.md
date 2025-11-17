@@ -7,11 +7,12 @@ Backend de l'application TYDA Vente, une plateforme e-commerce moderne dédiée 
 ## 🚀 Fonctionnalités
 
 ### 👥 Gestion des Utilisateurs
-- **Authentification JWT** sécurisée avec refresh tokens
-- **Trois rôles** : Client, Vendeur, Administrateur  
-- **Validation vendeurs** par l'équipe administrative
-- **Vérification email** obligatoire
-- **Sécurité avancée** : limitation tentatives, verrouillage comptes
+- **Authentification par code PIN** à 4 chiffres (comme Wave)
+- **Vérification SMS obligatoire** lors de l'inscription
+- **Inscription universelle en client** puis demande pour devenir vendeur
+- **Système de notifications** intégré (approbations, rejets, mises à jour)
+- **Validation vendeurs** par l'équipe administrative avec motif de rejet
+- **Sécurité avancée** : verrouillage après 5 tentatives (15 min)
 
 ### 🛍️ Gestion Produits
 - **CRUD complet** avec validation administrateur
@@ -168,15 +169,31 @@ npm run lint           # Linting ESLint (à venir)
 
 ## 📡 API Endpoints
 
-### Authentification
+### Authentification (Code PIN à 4 chiffres)
 ```
-POST /api/auth/register     # Inscription
-POST /api/auth/login        # Connexion  
-POST /api/auth/refresh      # Renouveler token
+POST /api/auth/register     # Étape 1 : Inscription avec téléphone
+POST /api/auth/verify-otp   # Étape 2 : Vérifier SMS OTP
+POST /api/auth/set-pin      # Étape 3 : Définir PIN 4 chiffres
+POST /api/auth/login        # Connexion (téléphone + PIN)
+POST /api/auth/request-otp  # Demander OTP (reset PIN)
+POST /api/auth/reset-pin    # Réinitialiser PIN
+POST /api/auth/change-pin   # Changer PIN (connecté)
+GET  /api/auth/me           # Profil utilisateur
 POST /api/auth/logout       # Déconnexion
-POST /api/auth/verify-email # Vérifier email
-POST /api/auth/forgot-password # Mot de passe oublié
 ```
+
+📚 **Documentation complète** : Voir [AUTH_PIN.md](../AUTH_PIN.md)
+
+### Devenir Vendeur
+```
+POST /api/users/request-vendor-status  # Client demande statut vendeur
+GET  /api/users/notifications          # Voir ses notifications
+PUT  /api/users/notifications/:id/read # Marquer comme lu
+PUT  /api/admin/vendors/:id/approve    # Admin approuve (→ vendeur)
+PUT  /api/admin/vendors/:id/reject     # Admin rejette avec motif
+```
+
+📚 **Documentation complète** : Voir [VENDOR_FLOW.md](../VENDOR_FLOW.md)
 
 ### Produits
 ```

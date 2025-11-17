@@ -13,9 +13,9 @@ const cleanupUsers = async () => {
 
     // Lister tous les utilisateurs avant suppression
     console.log('\n📋 Utilisateurs avant nettoyage:');
-    const allUsersBefore = await User.find({}, 'firstName lastName email role status');
+    const allUsersBefore = await User.find({}, 'firstName lastName phone role accountStatus');
     allUsersBefore.forEach((user, index) => {
-      console.log(`   ${index + 1}. ${user.firstName} ${user.lastName} - ${user.email} - ${user.role} [${user.status}]`);
+      console.log(`   ${index + 1}. ${user.firstName} ${user.lastName} - ${user.phone} - ${user.role} [${user.accountStatus}]`);
     });
 
     // Supprimer tous les utilisateurs sauf les admins
@@ -27,13 +27,13 @@ const cleanupUsers = async () => {
 
     // Lister les utilisateurs restants
     console.log('\n📋 Utilisateurs restants:');
-    const remainingUsers = await User.find({}, 'firstName lastName email role status');
+    const remainingUsers = await User.find({}, 'firstName lastName phone role accountStatus');
     
     if (remainingUsers.length === 0) {
       console.log('   Aucun utilisateur restant');
     } else {
       remainingUsers.forEach((user, index) => {
-        console.log(`   ${index + 1}. ${user.firstName} ${user.lastName} - ${user.email} - ${user.role} [${user.status}]`);
+        console.log(`   ${index + 1}. ${user.firstName} ${user.lastName} - ${user.phone} - ${user.role} [${user.accountStatus}]`);
       });
     }
 

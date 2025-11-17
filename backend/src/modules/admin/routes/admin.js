@@ -89,23 +89,51 @@ router.put('/vendors/:id/approve', [
   validateObjectId('id')
 ], asyncHandler(async (req, res) => {
   try {
-    const vendor = await User.findById(req.params.id);
-    if (!vendor || vendor.role !== 'vendeur') {
-      return res.status(404).json({ success: false, message: 'Vendeur non trouvé' });
+    const user = await User.findById(req.params.id);
+    
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Utilisateur non trouvé' });
     }
 
-    vendor.vendorInfo.validationStatus = 'approved';
-    vendor.vendorInfo.validatedAt = new Date();
-    vendor.vendorInfo.validatedBy = req.user.id;
-    await vendor.save();
+    if (!user.vendorInfo || user.vendorInfo.validationStatus !== 'pending') {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Aucune demande vendeur en attente pour cet utilisateur' 
+      });
+    }
+
+    // Changer le rôle de client à vendeur
+    user.role = 'vendeur';
+    user.vendorInfo.validationStatus = 'approved';
+    user.vendorInfo.validatedAt = new Date();
+    user.vendorInfo.validatedBy = req.user.userId;
+    user.vendorInfo.reviewedBy = req.user.userId;
+
+    // Créer une notification pour l'utilisateur
+    user.notifications.push({
+      type: 'vendor_approved',
+      title: '🎉 Demande vendeur approuvée',
+      message: `Félicitations ! Votre demande pour devenir vendeur a été approuvée. Vous pouvez maintenant accéder à votre espace vendeur et commencer à ajouter vos produits.`,
+      read: false,
+      createdAt: new Date(),
+      data: {
+        businessName: user.vendorInfo.businessName,
+        approvedAt: new Date()
+      }
+    });
+
+    await user.save();
+
+    console.log('[ADMIN] Vendeur approuvé:', { userId: user._id, businessName: user.vendorInfo.businessName });
 
     res.json({
       success: true,
       message: 'Vendeur approuvé avec succès',
       data: {
-        vendorId: vendor._id,
-        validationStatus: vendor.vendorInfo.validationStatus,
-        validatedAt: vendor.vendorInfo.validatedAt
+        userId: user._id,
+        role: user.role,
+        validationStatus: user.vendorInfo.validationStatus,
+        validatedAt: user.vendorInfo.validatedAt
       }
     });
   } catch (error) {
@@ -121,34 +149,64 @@ router.put('/vendors/:id/reject', [
 ], asyncHandler(async (req, res) => {
   try {
     const { rejectionReason } = req.body;
-    if (!rejectionReason) {
-      return res.status(400).json({ success: false, message: 'Raison du rejet requise' });
+    if (!rejectionReason || rejectionReason.trim().length < 10) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Raison du rejet requise (minimum 10 caractères)' 
+      });
     }
 
-    const vendor = await User.findById(req.params.id);
-    if (!vendor || vendor.role !== 'vendeur') {
-      return res.status(404).json({ success: false, message: 'Vendeur non trouvé' });
+    const user = await User.findById(req.params.id);
+    
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Utilisateur non trouvé' });
     }
 
-    vendor.vendorInfo.validationStatus = 'rejected';
-    vendor.vendorInfo.validatedAt = new Date();
-    vendor.vendorInfo.validatedBy = req.user.id;
-    vendor.vendorInfo.rejectionReason = rejectionReason;
-    await vendor.save();
+    if (!user.vendorInfo || user.vendorInfo.validationStatus !== 'pending') {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Aucune demande vendeur en attente pour cet utilisateur' 
+      });
+    }
+
+    // Rejeter la demande (reste client)
+    user.vendorInfo.validationStatus = 'rejected';
+    user.vendorInfo.validatedAt = new Date();
+    user.vendorInfo.validatedBy = req.user.userId;
+    user.vendorInfo.reviewedBy = req.user.userId;
+    user.vendorInfo.rejectionReason = rejectionReason.trim();
+
+    // Créer une notification pour l'utilisateur
+    user.notifications.push({
+      type: 'vendor_rejected',
+      title: '❌ Demande vendeur rejetée',
+      message: `Votre demande pour devenir vendeur a été rejetée. Motif : ${rejectionReason.trim()}`,
+      read: false,
+      createdAt: new Date(),
+      data: {
+        businessName: user.vendorInfo.businessName,
+        rejectionReason: rejectionReason.trim(),
+        rejectedAt: new Date()
+      }
+    });
+
+    await user.save();
+
+    console.log('[ADMIN] Vendeur rejeté:', { userId: user._id, reason: rejectionReason });
 
     res.json({
       success: true,
-      message: 'Vendeur rejeté',
+      message: 'Demande vendeur rejetée',
       data: {
-        vendorId: vendor._id,
-        validationStatus: vendor.vendorInfo.validationStatus,
-        validatedAt: vendor.vendorInfo.validatedAt,
+        userId: user._id,
+        validationStatus: user.vendorInfo.validationStatus,
+        validatedAt: user.vendorInfo.validatedAt,
         rejectionReason
       }
     });
   } catch (error) {
     console.error('Erreur rejet vendeur:', error);
-    res.status(500).json({ success: false, message: 'Erreur lors du rejet du vendeur' });
+    res.status(500).json({ success: false, message: 'Erreur lors du rejet de la demande' });
   }
 }));
 

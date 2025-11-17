@@ -16,23 +16,24 @@ const userSchema = new mongoose.Schema({
   },
   email: {
     type: String,
-    required: [true, 'Email requis'],
     unique: true,
+    sparse: true,
     lowercase: true,
     trim: true,
     match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Format email invalide']
   },
   phone: {
     type: String,
-    required: [true, 'Téléphone requis'],
+    required: [true, 'Numéro de téléphone requis'],
     unique: true,
     trim: true,
-    match: [/^\+225[0-9]{8,10}$/, 'Format téléphone ivoirien invalide']
+    match: [/^\+225[0-9]{8,10}$/, 'Format téléphone ivoirien invalide (+225XXXXXXXX)']
   },
-  password: {
+  pin: {
     type: String,
-    required: [true, 'Mot de passe requis'],
-    minlength: [6, 'Mot de passe trop court']
+    required: [true, 'Code PIN requis'],
+    minlength: [4, 'Le PIN doit faire exactement 4 chiffres'],
+    maxlength: [4, 'Le PIN doit faire exactement 4 chiffres']
   },
   address: {
     type: String,
@@ -78,12 +79,41 @@ const userSchema = new mongoose.Schema({
       type: String,
       trim: true
     },
+    requestedAt: Date,
     validatedAt: Date,
     validatedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User'
+    },
+    reviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
     }
   },
+  notifications: [{
+    type: {
+      type: String,
+      enum: ['vendor_approved', 'vendor_rejected', 'product_approved', 'product_rejected', 'order_update', 'system'],
+      required: true
+    },
+    title: {
+      type: String,
+      required: true
+    },
+    message: {
+      type: String,
+      required: true
+    },
+    read: {
+      type: Boolean,
+      default: false
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now
+    },
+    data: mongoose.Schema.Types.Mixed
+  }],
   otpCode: String,
   otpExpires: Date,
   otpAttempts: {
@@ -92,21 +122,21 @@ const userSchema = new mongoose.Schema({
   },
   lastOTPRequest: Date,
   lastLogin: Date,
-  loginAttempts: {
+  pinAttempts: {
     type: Number,
     default: 0
   },
-  lockUntil: Date
+  pinLockedUntil: Date
 }, {
   timestamps: true,
   toJSON: {
     transform: function(doc, ret) {
-      delete ret.password;
+      delete ret.pin;
       delete ret.otpCode;
       delete ret.otpExpires;
       delete ret.otpAttempts;
-      delete ret.loginAttempts;
-      delete ret.lockUntil;
+      delete ret.pinAttempts;
+      delete ret.pinLockedUntil;
       return ret;
     }
   }
@@ -117,54 +147,54 @@ userSchema.index({ phone: 1 });
 userSchema.index({ role: 1, accountStatus: 1 });
 
 userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
+  if (!this.isModified('pin')) return next();
   
   try {
     const salt = await bcrypt.genSalt(12);
-    this.password = await bcrypt.hash(this.password, salt);
+    this.pin = await bcrypt.hash(this.pin, salt);
     next();
   } catch (error) {
     next(error);
   }
 });
 
-userSchema.methods.comparePassword = async function(candidatePassword) {
+userSchema.methods.comparePin = async function(candidatePin) {
   try {
-    return await bcrypt.compare(candidatePassword, this.password);
+    return await bcrypt.compare(candidatePin, this.pin);
   } catch (error) {
     throw error;
   }
 };
 
-userSchema.methods.isLocked = function() {
-  return !!(this.lockUntil && this.lockUntil > Date.now());
+userSchema.methods.isPinLocked = function() {
+  return !!(this.pinLockedUntil && this.pinLockedUntil > Date.now());
 };
 
-userSchema.methods.incLoginAttempts = function() {
-  if (this.lockUntil && this.lockUntil < Date.now()) {
+userSchema.methods.incPinAttempts = function() {
+  if (this.pinLockedUntil && this.pinLockedUntil < Date.now()) {
     return this.updateOne({
-      $unset: { lockUntil: 1 },
-      $set: { loginAttempts: 1 }
+      $unset: { pinLockedUntil: 1 },
+      $set: { pinAttempts: 1 }
     });
   }
   
-  const updates = { $inc: { loginAttempts: 1 } };
+  const updates = { $inc: { pinAttempts: 1 } };
   
-  if (this.loginAttempts + 1 >= 5 && !this.isLocked()) {
-    updates.$set = { lockUntil: Date.now() + 2 * 60 * 60 * 1000 };
+  if (this.pinAttempts + 1 >= 5 && !this.isPinLocked()) {
+    updates.$set = { pinLockedUntil: Date.now() + 15 * 60 * 1000 };
   }
   
   return this.updateOne(updates);
 };
 
-userSchema.methods.resetLoginAttempts = function() {
+userSchema.methods.resetPinAttempts = function() {
   return this.updateOne({
-    $unset: { loginAttempts: 1, lockUntil: 1 }
+    $unset: { pinAttempts: 1, pinLockedUntil: 1 }
   });
 };
 
 userSchema.methods.isVerified = function() {
-  return this.isEmailVerified && this.isPhoneVerified && this.accountStatus === 'active';
+  return this.isPhoneVerified && this.accountStatus === 'active';
 };
 
 userSchema.methods.canSell = function() {

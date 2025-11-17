@@ -12,7 +12,7 @@ const createAdmin = async () => {
     // Vérifier si un admin existe déjà
     const existingAdmin = await User.findOne({ role: 'admin' });
     if (existingAdmin) {
-      console.log('Un administrateur existe déjà:', existingAdmin.email);
+      console.log('Un administrateur existe déjà:', existingAdmin.phone);
       process.exit(0);
     }
 
@@ -20,21 +20,10 @@ const createAdmin = async () => {
     const adminData = {
       firstName: 'Admin',
       lastName: 'TYDA',
-      email: 'admin@tyda-vente.ci',
-      password: 'admin123456', // Sera hashé automatiquement
       phone: '+2250700000000',
+      pin: '0000', // PIN admin par défaut - à changer !
       role: 'admin',
-      status: 'actif',
-      location: {
-        city: 'Abidjan',
-        commune: 'Plateau',
-        quartier: 'Centre-ville',
-        coordinates: [
-          -4.0314, // longitude
-          5.3364   // latitude
-        ]
-      },
-      isEmailVerified: true,
+      accountStatus: 'active',
       isPhoneVerified: true
     };
 
@@ -42,9 +31,9 @@ const createAdmin = async () => {
     await admin.save();
 
     console.log('✅ Administrateur créé avec succès !');
-    console.log('📧 Email: admin@tyda-vente.ci');
-    console.log('🔑 Mot de passe: admin123456');
-    console.log('⚠️  Changez le mot de passe après la première connexion !');
+    console.log('📱 Téléphone: +2250700000000');
+    console.log('🔐 PIN: 0000');
+    console.log('⚠️  Changez le PIN après la première connexion !');
 
   } catch (error) {
     console.error('❌ Erreur lors de la création de l\'administrateur:', error.message);

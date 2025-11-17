@@ -13,27 +13,25 @@ const createTestVendor = async () => {
     const vendorData = {
       firstName: 'Jean',
       lastName: 'Vendeur',
-      email: 'vendeur.test@tyda-vente.ci',
-      password: await bcrypt.hash('Vendeur123', 12),
       phone: '+2250123456789',
+      pin: '1234', // PIN de test
       role: 'vendeur',
-      address: {
-        street: '123 Rue du Commerce',
-        city: 'Abidjan',
-        region: 'Cocody',
-        country: 'Côte d\'Ivoire'
-      },
+      accountStatus: 'active',
+      isPhoneVerified: true,
+      address: 'Cocody, Abidjan',
       vendorInfo: {
         businessName: 'Boutique Jean',
-        businessDescription: 'Vente de produits électroniques et accessoires'
+        description: 'Vente de produits électroniques et accessoires',
+        validationStatus: 'approved',
+        validatedAt: new Date()
       }
     };
 
     // Vérifier si l'utilisateur existe déjà
-    const existingVendor = await User.findOne({ email: vendorData.email });
+    const existingVendor = await User.findOne({ phone: vendorData.phone });
     if (existingVendor) {
-      console.log('⚠️ Un vendeur avec cet email existe déjà');
-      console.log(`   Statut actuel: ${existingVendor.status}`);
+      console.log('⚠️ Un vendeur avec ce téléphone existe déjà');
+      console.log(`   Statut actuel: ${existingVendor.accountStatus}`);
       return;
     }
 
@@ -43,23 +41,23 @@ const createTestVendor = async () => {
 
     console.log('✅ Vendeur test créé avec succès:');
     console.log(`   👤 Nom: ${vendor.firstName} ${vendor.lastName}`);
-    console.log(`   📧 Email: ${vendor.email}`);
     console.log(`   📱 Téléphone: ${vendor.phone}`);
+    console.log(`   🔐 PIN: 1234`);
     console.log(`   👔 Rôle: ${vendor.role}`);
-    console.log(`   📊 Statut: ${vendor.status}`);
+    console.log(`   📊 Statut: ${vendor.accountStatus}`);
     console.log(`   🏢 Entreprise: ${vendor.vendorInfo.businessName}`);
-    console.log(`   📅 Créé le: ${new Date(vendor.createdAt).toLocaleString('fr-FR')}`);
+    console.log(`   ✅ Validation: ${vendor.vendorInfo.validationStatus}`);
 
     // Vérifier tous les utilisateurs maintenant
-    const allUsers = await User.find({}, 'firstName lastName email role status createdAt');
+    const allUsers = await User.find({}, 'firstName lastName phone role accountStatus createdAt');
     console.log(`\n📋 Total utilisateurs: ${allUsers.length}`);
     allUsers.forEach((user, index) => {
-      console.log(`   ${index + 1}. ${user.firstName} ${user.lastName} - ${user.role} [${user.status}]`);
+      console.log(`   ${index + 1}. ${user.firstName} ${user.lastName} - ${user.role} [${user.accountStatus}]`);
     });
 
     // Compter par statut
-    const pendingVendors = await User.countDocuments({ role: 'vendeur', status: 'en_attente' });
-    const activeUsers = await User.countDocuments({ status: 'actif' });
+    const pendingVendors = await User.countDocuments({ role: 'vendeur', 'vendorInfo.validationStatus': 'pending' });
+    const activeUsers = await User.countDocuments({ accountStatus: 'active' });
     
     console.log(`\n📊 Statistiques:`);
     console.log(`   🟡 Vendeurs en attente: ${pendingVendors}`);

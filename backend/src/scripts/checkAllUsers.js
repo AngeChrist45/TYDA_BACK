@@ -9,7 +9,7 @@ const checkAllUsers = async () => {
     console.log('✅ Connecté à MongoDB');
 
     // Récupérer tous les utilisateurs
-    const allUsers = await User.find({}, 'firstName lastName email phone role status createdAt vendorInfo');
+    const allUsers = await User.find({}, 'firstName lastName phone role accountStatus createdAt vendorInfo isPhoneVerified');
     
     console.log(`📊 Total utilisateurs dans la base: ${allUsers.length}`);
     console.log('=' .repeat(60));
@@ -19,15 +19,15 @@ const checkAllUsers = async () => {
     } else {
       allUsers.forEach((user, index) => {
         console.log(`\n${index + 1}. ${user.firstName} ${user.lastName}`);
-        console.log(`   📧 Email: ${user.email}`);
-        console.log(`   📱 Téléphone: ${user.phone || 'Non renseigné'}`);
+        console.log(`   📱 Téléphone: ${user.phone}`);
         console.log(`   👤 Rôle: ${user.role}`);
-        console.log(`   📈 Statut: ${user.status}`);
+        console.log(`   📈 Statut: ${user.accountStatus}`);
+        console.log(`   ✅ Téléphone vérifié: ${user.isPhoneVerified ? 'Oui' : 'Non'}`);
         console.log(`   📅 Créé le: ${new Date(user.createdAt).toLocaleString('fr-FR')}`);
         
-        if (user.role === 'vendeur' && user.vendorInfo) {
-          console.log(`   🏢 Entreprise: ${user.vendorInfo.businessName || 'Non renseigné'}`);
-          console.log(`   📝 Description: ${user.vendorInfo.businessDescription || 'Non renseigné'}`);
+        if (user.vendorInfo && user.vendorInfo.businessName) {
+          console.log(`   🏢 Entreprise: ${user.vendorInfo.businessName}`);
+          console.log(`   📝 Status vendeur: ${user.vendorInfo.validationStatus}`);
         }
         console.log('   ' + '-'.repeat(50));
       });
@@ -37,9 +37,9 @@ const checkAllUsers = async () => {
         admins: allUsers.filter(u => u.role === 'admin').length,
         clients: allUsers.filter(u => u.role === 'client').length,
         vendeurs: allUsers.filter(u => u.role === 'vendeur').length,
-        actifs: allUsers.filter(u => u.status === 'active').length,
-        enAttente: allUsers.filter(u => u.status === 'pending').length,
-        suspendu: allUsers.filter(u => u.status === 'suspended').length
+        actifs: allUsers.filter(u => u.accountStatus === 'active').length,
+        enAttente: allUsers.filter(u => u.accountStatus === 'pending_verification').length,
+        suspendu: allUsers.filter(u => u.accountStatus === 'suspended').length
       };
 
       console.log('\n📊 STATISTIQUES:');
@@ -47,7 +47,7 @@ const checkAllUsers = async () => {
       console.log(`   👤 Clients: ${stats.clients}`);
       console.log(`   🏪 Vendeurs: ${stats.vendeurs}`);
       console.log(`   ✅ Actifs: ${stats.actifs}`);
-      console.log(`   ⏳ En attente: ${stats.enAttente}`);
+      console.log(`   ⏳ En attente vérification: ${stats.enAttente}`);
       console.log(`   ⛔ Suspendus: ${stats.suspendu}`);
 
       // Afficher spécifiquement les vendeurs en attente

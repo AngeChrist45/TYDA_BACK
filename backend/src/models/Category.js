@@ -204,11 +204,8 @@ categorySchema.methods.updateStats = async function() {
     status: 'valide'
   });
   
-  // Calculer les ventes totales (à implémenter selon le modèle Order)
-  // const totalSales = await Order.aggregate([...]);
-  
+  // TODO: Calculer les ventes totales depuis Order.aggregate
   this.stats.productCount = productCount;
-  // this.stats.totalSales = totalSales;
   
   await this.save();
 };

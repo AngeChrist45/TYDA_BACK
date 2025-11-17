@@ -1,6 +1,6 @@
 const Joi = require('joi');
 
-// Validation pour l'inscription
+// Validation pour l'inscription (étape 1: téléphone)
 const registerValidation = Joi.object({
   firstName: Joi.string()
     .trim()
@@ -28,36 +28,6 @@ const registerValidation = Joi.object({
       'string.pattern.base': 'Le nom ne peut contenir que des lettres, espaces, apostrophes et tirets'
     }),
 
-  email: Joi.string()
-    .trim()
-    .email()
-    .lowercase()
-    .required()
-    .messages({
-      'string.empty': 'L\'email est requis',
-      'string.email': 'Format d\'email invalide'
-    }),
-
-  password: Joi.string()
-    .min(6)
-    .max(128)
-    .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
-    .required()
-    .messages({
-      'string.empty': 'Le mot de passe est requis',
-      'string.min': 'Le mot de passe doit contenir au moins 6 caractères',
-      'string.max': 'Le mot de passe ne peut pas dépasser 128 caractères',
-      'string.pattern.base': 'Le mot de passe doit contenir au moins une majuscule, une minuscule et un chiffre'
-    }),
-
-  confirmPassword: Joi.string()
-    .valid(Joi.ref('password'))
-    .required()
-    .messages({
-      'any.only': 'La confirmation du mot de passe ne correspond pas',
-      'string.empty': 'La confirmation du mot de passe est requise'
-    }),
-
   phone: Joi.string()
     .pattern(/^\+225[0-9]{8,10}$/)
     .required()
@@ -66,151 +36,134 @@ const registerValidation = Joi.object({
       'string.pattern.base': 'Format de téléphone invalide (utilisez +225XXXXXXXX avec 8 à 10 chiffres)'
     }),
 
-  role: Joi.string()
-    .valid('client', 'vendeur')
-    .default('client')
-    .messages({
-      'any.only': 'Le rôle doit être client ou vendeur'
-    }),
-
-  address: Joi.object({
-    street: Joi.string().trim().max(200).optional(),
-    city: Joi.string().trim().max(100).optional(),
-    region: Joi.string().trim().max(100).optional(),
-    country: Joi.string().trim().default('Côte d\'Ivoire')
-  }).optional(),
-
-  vendorInfo: Joi.object({
-    businessName: Joi.string()
-      .trim()
-      .min(2)
-      .max(100)
-      .optional() // Rendu optionnel pour l'inscription
-      .messages({
-        'string.empty': 'Le nom de l\'entreprise est requis pour les vendeurs',
-        'string.min': 'Le nom de l\'entreprise doit contenir au moins 2 caractères',
-        'string.max': 'Le nom de l\'entreprise ne peut pas dépasser 100 caractères'
-      }),
-
-    businessDescription: Joi.string()
-      .trim()
-      .max(500)
-      .optional()
-      .messages({
-        'string.max': 'La description ne peut pas dépasser 500 caractères'
-      }),
-
-    businessLicense: Joi.string()
-      .uri()
-      .optional()
-      .messages({
-        'string.uri': 'L\'URL du document de licence doit être valide'
-      })
-  }).when('role', {
-    is: 'vendeur',
-    then: Joi.required(),
-    otherwise: Joi.optional()
-  })
-}).options({ stripUnknown: true });
-
-// Validation pour la connexion
-const loginValidation = Joi.object({
   email: Joi.string()
     .trim()
     .email()
     .lowercase()
-    .required()
-    .messages({
-      'string.empty': 'L\'email est requis',
-      'string.email': 'Format d\'email invalide'
-    }),
-
-  password: Joi.string()
-    .required()
-    .messages({
-      'string.empty': 'Le mot de passe est requis'
-    }),
-
-  rememberMe: Joi.boolean()
-    .default(false)
     .optional()
-}).options({ stripUnknown: true });
-
-// Validation pour mot de passe oublié
-const forgotPasswordValidation = Joi.object({
-  email: Joi.string()
-    .trim()
-    .email()
-    .lowercase()
-    .required()
     .messages({
-      'string.empty': 'L\'email est requis',
       'string.email': 'Format d\'email invalide'
-    })
-}).options({ stripUnknown: true });
-
-// Validation pour réinitialisation du mot de passe
-const resetPasswordValidation = Joi.object({
-  password: Joi.string()
-    .min(6)
-    .max(128)
-    .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
-    .required()
-    .messages({
-      'string.empty': 'Le mot de passe est requis',
-      'string.min': 'Le mot de passe doit contenir au moins 6 caractères',
-      'string.max': 'Le mot de passe ne peut pas dépasser 128 caractères',
-      'string.pattern.base': 'Le mot de passe doit contenir au moins une majuscule, une minuscule et un chiffre'
     }),
 
-  confirmPassword: Joi.string()
-    .valid(Joi.ref('password'))
-    .required()
-    .messages({
-      'any.only': 'La confirmation du mot de passe ne correspond pas',
-      'string.empty': 'La confirmation du mot de passe est requise'
-    })
-}).options({ stripUnknown: true });
-
-// Validation pour changement de mot de passe
-const changePasswordValidation = Joi.object({
-  currentPassword: Joi.string()
-    .required()
-    .messages({
-      'string.empty': 'Le mot de passe actuel est requis'
-    }),
-
-  newPassword: Joi.string()
-    .min(6)
-    .max(128)
-    .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
-    .required()
-    .messages({
-      'string.empty': 'Le nouveau mot de passe est requis',
-      'string.min': 'Le nouveau mot de passe doit contenir au moins 6 caractères',
-      'string.max': 'Le nouveau mot de passe ne peut pas dépasser 128 caractères',
-      'string.pattern.base': 'Le nouveau mot de passe doit contenir au moins une majuscule, une minuscule et un chiffre'
-    }),
-
-  confirmNewPassword: Joi.string()
-    .valid(Joi.ref('newPassword'))
-    .required()
-    .messages({
-      'any.only': 'La confirmation du nouveau mot de passe ne correspond pas',
-      'string.empty': 'La confirmation du nouveau mot de passe est requise'
-    })
-}).options({ stripUnknown: true });
-
-// Validation pour vérification d'email
-const emailVerificationValidation = Joi.object({
-  email: Joi.string()
+  address: Joi.string()
     .trim()
-    .email()
-    .lowercase()
+    .max(200)
+    .optional()
+    .messages({
+      'string.max': 'L\'adresse ne peut pas dépasser 200 caractères'
+    })
+}).options({ stripUnknown: true });
+
+// Validation pour vérification OTP (étape 2)
+const verifyOtpValidation = Joi.object({
+  phone: Joi.string()
+    .pattern(/^\+225[0-9]{8,10}$/)
     .required()
     .messages({
-      'string.empty': 'L\'email est requis',
-      'string.email': 'Format d\'email invalide'
+      'string.empty': 'Le numéro de téléphone est requis',
+      'string.pattern.base': 'Format de téléphone invalide'
+    }),
+
+  otpCode: Joi.string()
+    .length(6)
+    .pattern(/^[0-9]+$/)
+    .required()
+    .messages({
+      'string.empty': 'Le code OTP est requis',
+      'string.length': 'Le code doit contenir exactement 6 chiffres',
+      'string.pattern.base': 'Le code ne peut contenir que des chiffres'
+    })
+}).options({ stripUnknown: true });
+
+// Validation pour définir le PIN (étape 3)
+const setPinValidation = Joi.object({
+  phone: Joi.string()
+    .pattern(/^\+225[0-9]{8,10}$/)
+    .required()
+    .messages({
+      'string.empty': 'Le numéro de téléphone est requis',
+      'string.pattern.base': 'Format de téléphone invalide'
+    }),
+
+  pin: Joi.string()
+    .length(4)
+    .pattern(/^[0-9]+$/)
+    .required()
+    .messages({
+      'string.empty': 'Le code PIN est requis',
+      'string.length': 'Le PIN doit contenir exactement 4 chiffres',
+      'string.pattern.base': 'Le PIN ne peut contenir que des chiffres'
+    }),
+
+  confirmPin: Joi.string()
+    .valid(Joi.ref('pin'))
+    .required()
+    .messages({
+      'any.only': 'La confirmation du PIN ne correspond pas',
+      'string.empty': 'La confirmation du PIN est requise'
+    })
+}).options({ stripUnknown: true });
+
+// Validation pour la connexion (téléphone + PIN)
+const loginValidation = Joi.object({
+  phone: Joi.string()
+    .pattern(/^\+225[0-9]{8,10}$/)
+    .required()
+    .messages({
+      'string.empty': 'Le numéro de téléphone est requis',
+      'string.pattern.base': 'Format de téléphone invalide'
+    }),
+
+  pin: Joi.string()
+    .length(4)
+    .pattern(/^[0-9]+$/)
+    .required()
+    .messages({
+      'string.empty': 'Le code PIN est requis',
+      'string.length': 'Le PIN doit contenir exactement 4 chiffres',
+      'string.pattern.base': 'Le PIN ne peut contenir que des chiffres'
+    })
+}).options({ stripUnknown: true });
+
+// Validation pour demande OTP (reset PIN ou renvoi)
+const requestOtpValidation = Joi.object({
+  phone: Joi.string()
+    .pattern(/^\+225[0-9]{8,10}$/)
+    .required()
+    .messages({
+      'string.empty': 'Le numéro de téléphone est requis',
+      'string.pattern.base': 'Format de téléphone invalide'
+    })
+}).options({ stripUnknown: true });
+
+// Validation pour changement de PIN
+const changePinValidation = Joi.object({
+  currentPin: Joi.string()
+    .length(4)
+    .pattern(/^[0-9]+$/)
+    .required()
+    .messages({
+      'string.empty': 'Le PIN actuel est requis',
+      'string.length': 'Le PIN doit contenir exactement 4 chiffres',
+      'string.pattern.base': 'Le PIN ne peut contenir que des chiffres'
+    }),
+
+  newPin: Joi.string()
+    .length(4)
+    .pattern(/^[0-9]+$/)
+    .required()
+    .messages({
+      'string.empty': 'Le nouveau PIN est requis',
+      'string.length': 'Le nouveau PIN doit contenir exactement 4 chiffres',
+      'string.pattern.base': 'Le nouveau PIN ne peut contenir que des chiffres'
+    }),
+
+  confirmNewPin: Joi.string()
+    .valid(Joi.ref('newPin'))
+    .required()
+    .messages({
+      'any.only': 'La confirmation du nouveau PIN ne correspond pas',
+      'string.empty': 'La confirmation du nouveau PIN est requise'
     })
 }).options({ stripUnknown: true });
 
@@ -235,12 +188,45 @@ const phoneVerificationValidation = Joi.object({
     })
 }).options({ stripUnknown: true });
 
+// Validation pour demande statut vendeur
+const requestVendorStatusValidation = Joi.object({
+  businessName: Joi.string()
+    .trim()
+    .min(2)
+    .max(100)
+    .required()
+    .messages({
+      'string.empty': 'Le nom de l\'entreprise est requis',
+      'string.min': 'Le nom de l\'entreprise doit contenir au moins 2 caractères',
+      'string.max': 'Le nom de l\'entreprise ne peut pas dépasser 100 caractères'
+    }),
+
+  description: Joi.string()
+    .trim()
+    .min(20)
+    .max(500)
+    .required()
+    .messages({
+      'string.empty': 'La description de votre activité est requise',
+      'string.min': 'La description doit contenir au moins 20 caractères',
+      'string.max': 'La description ne peut pas dépasser 500 caractères'
+    }),
+
+  category: Joi.string()
+    .valid('alimentation', 'vetements', 'electronique', 'maison', 'services', 'autres')
+    .default('autres')
+    .messages({
+      'any.only': 'Catégorie invalide'
+    })
+}).options({ stripUnknown: true });
+
 module.exports = {
   registerValidation,
+  verifyOtpValidation,
+  setPinValidation,
   loginValidation,
-  forgotPasswordValidation,
-  resetPasswordValidation,
-  changePasswordValidation,
-  emailVerificationValidation,
-  phoneVerificationValidation
+  requestOtpValidation,
+  changePinValidation,
+  phoneVerificationValidation,
+  requestVendorStatusValidation
 };
