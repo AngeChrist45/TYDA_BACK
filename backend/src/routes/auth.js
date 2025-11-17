@@ -11,7 +11,7 @@ const {
   requestOtpValidation,
   changePinValidation
 } = require('../validations/authValidation');
-const auth = require('../middleware/auth');
+const { auth } = require('../middleware/auth');
 
 const router = express.Router();
 
