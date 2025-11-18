@@ -93,7 +93,7 @@ router.post('/start', [
   // Message d'accueil du bot
   const welcomeMessage = `Bonjour ! Je suis TYDA Bot, votre assistant négociation. Ce produit coûte ${negotiation.originalPrice.toLocaleString()} FCFA. Quel prix souhaitez-vous proposer ?`;
   
-  await negotiation.addMessage('bot', welcomeMessage, null, 'greeting');
+  await negotiation.addMessage('bot', welcomeMessage, null, null);
 
   res.status(201).json({
     success: true,
