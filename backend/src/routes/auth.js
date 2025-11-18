@@ -139,8 +139,12 @@ router.post('/register', [registerLimiter, validateRequest(registerValidation)],
 router.post('/verify-otp', [validateRequest(verifyOtpValidation)], async (req, res) => {
   try {
     const { phone, otpCode } = req.validatedBody;
+    
+    console.log('[AUTH] Vérification OTP demandée:', { phone, otpCode });
 
     const user = await User.findOne({ phone, accountStatus: 'pending_verification' });
+    
+    console.log('[AUTH] Utilisateur trouvé:', user ? `Oui (OTP stocké: ${user.otpCode})` : 'Non');
 
     if (!user) {
       return res.status(404).json({
@@ -155,6 +159,8 @@ router.post('/verify-otp', [validateRequest(verifyOtpValidation)], async (req, r
       user.otpAttempts = (user.otpAttempts || 0) + 1;
       await user.save();
 
+      console.log('[AUTH] OTP invalide:', { recu: otpCode, attendu: user.otpCode });
+
       return res.status(400).json({
         success: false,
         error: 'Code OTP invalide',
@@ -164,6 +170,7 @@ router.post('/verify-otp', [validateRequest(verifyOtpValidation)], async (req, r
     }
 
     if (user.otpExpires < Date.now()) {
+      console.log('[AUTH] OTP expiré');
       return res.status(400).json({
         success: false,
         error: 'Code OTP expiré',
