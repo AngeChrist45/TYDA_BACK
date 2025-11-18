@@ -196,10 +196,17 @@ negotiationSchema.methods.addMessage = async function(sender, message, proposedP
   const newMessage = {
     sender,
     message,
-    proposedPrice,
-    botResponse,
     timestamp: new Date()
   };
+  
+  // Ajouter les champs optionnels seulement s'ils ont une valeur
+  if (proposedPrice !== null && proposedPrice !== undefined) {
+    newMessage.proposedPrice = proposedPrice;
+  }
+  
+  if (botResponse !== null && botResponse !== undefined) {
+    newMessage.botResponse = botResponse;
+  }
   
   this.messages.push(newMessage);
   

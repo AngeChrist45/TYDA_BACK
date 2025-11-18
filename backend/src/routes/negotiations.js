@@ -190,9 +190,11 @@ router.post('/:id/propose', [
 
   } catch (error) {
     console.error('Erreur négociation:', error);
+    console.error('Stack:', error.stack);
     res.status(500).json({
       success: false,
-      message: 'Erreur lors du traitement de la négociation'
+      message: 'Erreur lors du traitement de la négociation',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 }));
