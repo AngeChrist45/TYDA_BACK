@@ -32,8 +32,8 @@ const userSchema = new mongoose.Schema({
   pin: {
     type: String,
     required: [true, 'Code PIN requis'],
-    minlength: [4, 'Le PIN doit faire exactement 4 chiffres'],
-    maxlength: [4, 'Le PIN doit faire exactement 4 chiffres']
+    minlength: [4, 'Le PIN doit faire au moins 4 chiffres'],
+    maxlength: [60, 'PIN invalide'] // 60 pour le hash bcrypt
   },
   address: {
     type: String,
