@@ -102,8 +102,14 @@ router.post('/register', [registerLimiter, validateRequest(registerValidation)],
 
     await tempUser.save();
 
-    // Envoyer SMS
-    await otpService.sendOTP(phone, otpCode, 'sms');
+    // Envoyer SMS (ou logger en développement)
+    try {
+      await otpService.sendOTP(phone, otpCode, 'sms');
+      console.log('[AUTH] SMS OTP envoyé:', { phone, otpCode });
+    } catch (smsError) {
+      console.warn('[AUTH] Impossible d\'envoyer SMS, OTP en console:', otpCode);
+      console.warn('[AUTH] Erreur SMS:', smsError.message);
+    }
 
     console.log('[AUTH] Inscription initiée:', { phone, otpCode });
 
@@ -113,7 +119,9 @@ router.post('/register', [registerLimiter, validateRequest(registerValidation)],
       data: {
         userId: tempUser._id,
         phone: tempUser.phone,
-        nextStep: 'verify_otp'
+        nextStep: 'verify_otp',
+        // Uniquement en développement
+        ...(process.env.NODE_ENV === 'development' && { otpCode })
       }
     });
 
