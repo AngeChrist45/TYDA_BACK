@@ -83,6 +83,36 @@ router.get('/dashboard', [
   }
 }));
 
+/**
+ * @route   GET /api/admin/vendor-requests
+ * @desc    Obtenir toutes les demandes de vendeurs (tous les statuts)
+ * @access  Private (Admin)
+ */
+router.get('/vendor-requests', [
+  auth,
+  authorize('admin')
+], asyncHandler(async (req, res) => {
+  try {
+    const vendors = await User.find({
+      role: 'vendeur'
+    })
+      .select('firstName lastName email phone vendorInfo createdAt accountStatus')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.json({
+      success: true,
+      data: vendors
+    });
+  } catch (error) {
+    console.error('Erreur récupération vendeurs:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erreur lors de la récupération des vendeurs' 
+    });
+  }
+}));
+
 router.put('/vendors/:id/approve', [
   auth,
   authorize('admin'),
@@ -691,6 +721,317 @@ router.get('/stats/dashboard', [
       success: false, 
       message: 'Erreur lors du chargement des statistiques',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+}));
+
+/**
+ * @route   GET /api/admin/products
+ * @desc    Obtenir tous les produits (pour backoffice admin)
+ * @access  Private (Admin)
+ */
+router.get('/products', [
+  auth,
+  authorize('admin')
+], asyncHandler(async (req, res) => {
+  try {
+    const products = await Product.find()
+      .populate('vendor', 'firstName lastName vendorInfo')
+      .populate('category', 'name')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.json({
+      success: true,
+      data: products
+    });
+  } catch (error) {
+    console.error('Erreur récupération produits:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erreur lors de la récupération des produits' 
+    });
+  }
+}));
+
+/**
+ * @route   DELETE /api/admin/products/:id
+ * @desc    Supprimer un produit
+ * @access  Private (Admin)
+ */
+router.delete('/products/:id', [
+  auth,
+  authorize('admin'),
+  validateObjectId('id')
+], asyncHandler(async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    
+    if (!product) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Produit non trouvé' 
+      });
+    }
+
+    await product.deleteOne();
+
+    res.json({
+      success: true,
+      message: 'Produit supprimé avec succès'
+    });
+  } catch (error) {
+    console.error('Erreur suppression produit:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erreur lors de la suppression du produit' 
+    });
+  }
+}));
+
+/**
+ * @route   GET /api/admin/orders
+ * @desc    Obtenir toutes les commandes
+ * @access  Private (Admin)
+ */
+router.get('/orders', [
+  auth,
+  authorize('admin')
+], asyncHandler(async (req, res) => {
+  try {
+    const Order = require('../../../models/Order');
+    
+    const orders = await Order.find()
+      .populate('customer', 'firstName lastName email phone')
+      .populate({
+        path: 'items.product',
+        select: 'name price images'
+      })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.json({
+      success: true,
+      data: orders
+    });
+  } catch (error) {
+    console.error('Erreur récupération commandes:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erreur lors de la récupération des commandes' 
+    });
+  }
+}));
+
+/**
+ * @route   PUT /api/admin/orders/:id/status
+ * @desc    Mettre à jour le statut d'une commande
+ * @access  Private (Admin)
+ */
+router.put('/orders/:id/status', [
+  auth,
+  authorize('admin'),
+  validateObjectId('id')
+], asyncHandler(async (req, res) => {
+  try {
+    const Order = require('../../../models/Order');
+    const { status } = req.body;
+
+    const validStatuses = ['pending', 'processing', 'delivered', 'cancelled'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Statut invalide' 
+      });
+    }
+
+    const order = await Order.findById(req.params.id);
+    
+    if (!order) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Commande non trouvée' 
+      });
+    }
+
+    order.status = status;
+    order.statusHistory.push({
+      status,
+      updatedBy: req.user.userId,
+      note: `Statut mis à jour par l'administrateur`
+    });
+
+    await order.save();
+
+    res.json({
+      success: true,
+      message: 'Statut de la commande mis à jour',
+      data: order
+    });
+  } catch (error) {
+    console.error('Erreur mise à jour commande:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erreur lors de la mise à jour de la commande' 
+    });
+  }
+}));
+
+/**
+ * @route   GET /api/admin/categories
+ * @desc    Obtenir toutes les catégories
+ * @access  Private (Admin)
+ */
+router.get('/categories', [
+  auth,
+  authorize('admin')
+], asyncHandler(async (req, res) => {
+  try {
+    const categories = await Category.find()
+      .populate('parent', 'name')
+      .sort({ level: 1, name: 1 })
+      .lean();
+
+    res.json({
+      success: true,
+      data: categories
+    });
+  } catch (error) {
+    console.error('Erreur récupération catégories:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erreur lors de la récupération des catégories' 
+    });
+  }
+}));
+
+/**
+ * @route   POST /api/admin/categories
+ * @desc    Créer une nouvelle catégorie
+ * @access  Private (Admin)
+ */
+router.post('/categories', [
+  auth,
+  authorize('admin')
+], asyncHandler(async (req, res) => {
+  try {
+    const { name, description, parent, icon, isActive } = req.body;
+
+    if (!name) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Le nom est requis' 
+      });
+    }
+
+    const category = new Category({
+      name,
+      description,
+      parent: parent || null,
+      icon,
+      isActive: isActive !== undefined ? isActive : true
+    });
+
+    await category.save();
+
+    res.status(201).json({
+      success: true,
+      message: 'Catégorie créée avec succès',
+      data: category
+    });
+  } catch (error) {
+    console.error('Erreur création catégorie:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erreur lors de la création de la catégorie' 
+    });
+  }
+}));
+
+/**
+ * @route   PUT /api/admin/categories/:id
+ * @desc    Mettre à jour une catégorie
+ * @access  Private (Admin)
+ */
+router.put('/categories/:id', [
+  auth,
+  authorize('admin'),
+  validateObjectId('id')
+], asyncHandler(async (req, res) => {
+  try {
+    const { name, description, parent, icon, isActive } = req.body;
+
+    const category = await Category.findById(req.params.id);
+    
+    if (!category) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Catégorie non trouvée' 
+      });
+    }
+
+    if (name) category.name = name;
+    if (description !== undefined) category.description = description;
+    if (parent !== undefined) category.parent = parent;
+    if (icon !== undefined) category.icon = icon;
+    if (isActive !== undefined) category.isActive = isActive;
+
+    await category.save();
+
+    res.json({
+      success: true,
+      message: 'Catégorie mise à jour avec succès',
+      data: category
+    });
+  } catch (error) {
+    console.error('Erreur mise à jour catégorie:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erreur lors de la mise à jour de la catégorie' 
+    });
+  }
+}));
+
+/**
+ * @route   DELETE /api/admin/categories/:id
+ * @desc    Supprimer une catégorie
+ * @access  Private (Admin)
+ */
+router.delete('/categories/:id', [
+  auth,
+  authorize('admin'),
+  validateObjectId('id')
+], asyncHandler(async (req, res) => {
+  try {
+    const category = await Category.findById(req.params.id);
+    
+    if (!category) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Catégorie non trouvée' 
+      });
+    }
+
+    // Vérifier s'il y a des produits liés
+    const productCount = await Product.countDocuments({ category: req.params.id });
+    if (productCount > 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: `Impossible de supprimer : ${productCount} produit(s) utilisent cette catégorie` 
+      });
+    }
+
+    await category.deleteOne();
+
+    res.json({
+      success: true,
+      message: 'Catégorie supprimée avec succès'
+    });
+  } catch (error) {
+    console.error('Erreur suppression catégorie:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erreur lors de la suppression de la catégorie' 
     });
   }
 }));
