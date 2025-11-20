@@ -39,8 +39,12 @@ const io = new Server(server, {
   cors: {
     origin: [
       process.env.FRONTEND_WEB_URL || 'http://localhost:3000',
-      process.env.FRONTEND_MOBILE_URL || 'http://localhost:19006'
+      process.env.FRONTEND_MOBILE_URL || 'http://localhost:19006',
+      'http://localhost:5173', // Vite dev server
+      'http://localhost:8080', // Backoffice
+      'http://localhost:4173', // Vite preview
     ],
+  
     methods: ['GET', 'POST']
   }
 });
@@ -64,7 +68,10 @@ app.use(limiter); // Rate limiting
 app.use(cors({
   origin: [
     process.env.FRONTEND_WEB_URL || 'http://localhost:3000',
-    process.env.FRONTEND_MOBILE_URL || 'http://localhost:19006'
+    process.env.FRONTEND_MOBILE_URL || 'http://localhost:19006',
+    'http://localhost:5173', // Vite dev server (frontend)
+    'http://localhost:8080', // Backoffice admin
+    'http://localhost:4173', // Vite preview
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
