@@ -575,4 +575,124 @@ router.get('/reports/export', [
   });
 }));
 
+/**
+ * @route   GET /api/admin/stats/dashboard
+ * @desc    Statistiques pour le backoffice dashboard
+ * @access  Private (Admin)
+ */
+router.get('/stats/dashboard', [
+  auth,
+  authorize('admin')
+], asyncHandler(async (req, res) => {
+  try {
+    const Order = require('../../../models/Order');
+    
+    // Période pour calculer les changements (30 derniers jours)
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
+    const sixtyDaysAgo = new Date(now.getTime() - (60 * 24 * 60 * 60 * 1000));
+
+    // Compter les éléments actuels et précédents
+    const [
+      currentOrders,
+      previousOrders,
+      currentUsers,
+      previousUsers,
+      currentProducts,
+      pendingProducts,
+      totalRevenue,
+      previousRevenue
+    ] = await Promise.all([
+      Order.countDocuments({ createdAt: { $gte: thirtyDaysAgo } }).catch(() => 0),
+      Order.countDocuments({ 
+        createdAt: { $gte: sixtyDaysAgo, $lt: thirtyDaysAgo } 
+      }).catch(() => 0),
+      User.countDocuments({ 
+        role: { $in: ['client', 'vendeur'] },
+        createdAt: { $gte: thirtyDaysAgo } 
+      }),
+      User.countDocuments({ 
+        role: { $in: ['client', 'vendeur'] },
+        createdAt: { $gte: sixtyDaysAgo, $lt: thirtyDaysAgo } 
+      }),
+      Product.countDocuments({ status: 'valide' }),
+      Product.countDocuments({ status: 'en_attente' }),
+      Order.aggregate([
+        { $match: { 
+          paymentStatus: 'paid',
+          createdAt: { $gte: thirtyDaysAgo }
+        }},
+        { $group: { _id: null, total: { $sum: '$totalAmount' } } }
+      ]).then(res => res[0]?.total || 0).catch(() => 0),
+      Order.aggregate([
+        { $match: { 
+          paymentStatus: 'paid',
+          createdAt: { $gte: sixtyDaysAgo, $lt: thirtyDaysAgo }
+        }},
+        { $group: { _id: null, total: { $sum: '$totalAmount' } } }
+      ]).then(res => res[0]?.total || 0).catch(() => 0)
+    ]);
+
+    // Calculer les pourcentages de changement
+    const calculateChange = (current, previous) => {
+      if (previous === 0) return current > 0 ? 100 : 0;
+      return Math.round(((current - previous) / previous) * 100);
+    };
+
+    // Commandes récentes
+    const recentOrders = await Order.find()
+      .populate('customer', 'firstName lastName phone')
+      .populate('items.product', 'title images')
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .lean()
+      .catch(() => []);
+
+    // Produits populaires (par ventes)
+    const popularProducts = await Product.find({ status: 'valide' })
+      .sort({ 'stats.totalSales': -1, 'stats.views': -1 })
+      .limit(5)
+      .select('title price stats images')
+      .lean();
+
+    const stats = {
+      revenue: {
+        total: totalRevenue,
+        change: calculateChange(totalRevenue, previousRevenue),
+        currency: 'FCFA'
+      },
+      orders: {
+        total: currentOrders,
+        change: calculateChange(currentOrders, previousOrders),
+        pending: await Order.countDocuments({ status: 'pending' }).catch(() => 0)
+      },
+      products: {
+        total: currentProducts,
+        change: 0, // Pas de comparaison temporelle pour les produits
+        pending: pendingProducts
+      },
+      users: {
+        total: currentUsers,
+        change: calculateChange(currentUsers, previousUsers),
+        clients: await User.countDocuments({ role: 'client' }),
+        vendors: await User.countDocuments({ role: 'vendeur' })
+      },
+      recentOrders,
+      popularProducts
+    };
+
+    res.json({
+      success: true,
+      data: stats
+    });
+  } catch (error) {
+    console.error('Erreur stats dashboard:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erreur lors du chargement des statistiques',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+}));
+
 module.exports = router;
