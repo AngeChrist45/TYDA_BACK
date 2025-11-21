@@ -108,6 +108,27 @@ class OTPService {
     this.otpStorage.delete(sessionId);
   }
 
+  // Envoyer l'OTP (SMS en production, console en dev)
+  async sendOTP(phone, otpCode, method = 'sms') {
+    // En développement, afficher dans la console
+    if (process.env.NODE_ENV === 'development') {
+      console.log('\n🔐 ========================================');
+      console.log('📱 CODE OTP GÉNÉRÉ');
+      console.log('========================================');
+      console.log(`Téléphone: ${phone}`);
+      console.log(`Code OTP: ${otpCode}`);
+      console.log(`Méthode: ${method}`);
+      console.log(`Expire dans: 5 minutes`);
+      console.log('========================================\n');
+      return { success: true };
+    }
+
+    // En production, intégrer un service SMS (Twilio, Orange SMS API, etc.)
+    // TODO: Implémenter l'envoi SMS réel
+    console.log(`[OTP] SMS à envoyer à ${phone}: ${otpCode}`);
+    return { success: true };
+  }
+
   // Obtenir les statistiques
   getStats() {
     const now = Date.now();
