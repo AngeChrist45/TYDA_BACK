@@ -15,6 +15,9 @@ const userRoutes = require('./routes/users');
 const categoryRoutes = require('./routes/categories');
 const orderRoutes = require('./routes/orders');
 const negotiationRoutes = require('./routes/negotiations');
+const cartRoutes = require('./routes/cart');
+const favoritesRoutes = require('./routes/favorites');
+const vendorsRoutes = require('./routes/vendors');
 const adminRoutes = require('./modules/admin/routes/admin');
 // Modules séparés par rôle
 const clientProductsRoutes = require('./modules/client/routes/products');
@@ -106,6 +109,9 @@ app.use('/api/vendor', vendorProfileRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/negotiations', negotiationRoutes);
+app.use('/api/cart', cartRoutes);
+app.use('/api/favorites', favoritesRoutes);
+app.use('/api/vendors', vendorsRoutes);
 app.use('/api/admin', adminRoutes);
 
 // Gestion des erreurs

@@ -126,7 +126,11 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
-  pinLockedUntil: Date
+  pinLockedUntil: Date,
+  favorites: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Product'
+  }]
 }, {
   timestamps: true,
   toJSON: {
