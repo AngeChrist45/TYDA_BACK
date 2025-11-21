@@ -44,6 +44,7 @@ const io = new Server(server, {
       process.env.FRONTEND_WEB_URL || 'http://localhost:3000',
       process.env.FRONTEND_MOBILE_URL || 'http://localhost:19006',
       'http://localhost:5173', // Vite dev server
+      'http://localhost:5174', // Vite dev server (alternate port)
       'http://localhost:8080', // Backoffice
       'http://localhost:4173', // Vite preview
     ],
@@ -73,6 +74,7 @@ app.use(cors({
     process.env.FRONTEND_WEB_URL || 'http://localhost:3000',
     process.env.FRONTEND_MOBILE_URL || 'http://localhost:19006',
     'http://localhost:5173', // Vite dev server (frontend)
+    'http://localhost:5174', // Vite dev server (alternate port)
     'http://localhost:8080', // Backoffice admin
     'http://localhost:4173', // Vite preview
   ],
