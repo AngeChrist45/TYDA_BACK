@@ -6,8 +6,17 @@ const User = require('../models/User');
 
 // Get user favorites
 router.get('/', auth, asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user._id).populate('favorites');
-  res.json({ success: true, data: user.favorites || [] });
+  const user = await User.findById(req.user._id).populate({
+    path: 'favorites',
+    populate: { path: 'vendor', select: 'firstName lastName businessName' }
+  });
+  
+  const favorites = (user.favorites || []).map(product => ({
+    _id: product._id + '_fav',
+    product: product
+  }));
+  
+  res.json({ success: true, data: favorites });
 }));
 
 // Add product to favorites

@@ -62,7 +62,23 @@ const userSchema = new mongoose.Schema({
       type: String,
       trim: true
     },
-    description: {
+    businessDescription: {
+      type: String,
+      trim: true
+    },
+    businessAddress: {
+      type: String,
+      trim: true
+    },
+    fullName: {
+      type: String,
+      trim: true
+    },
+    photo: {
+      type: String,
+      trim: true
+    },
+    identityDocument: {
       type: String,
       trim: true
     },

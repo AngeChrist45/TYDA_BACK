@@ -9,20 +9,60 @@ const Negotiation = require('../models/Negotiation');
 
 // Request to become vendor
 router.post('/request', auth, asyncHandler(async (req, res) => {
-  const { businessName, businessDescription, businessAddress } = req.body;
+  const { businessName, businessDescription, businessAddress, fullName, photo, identityDocument } = req.body;
+
+  // Validation
+  if (!businessName || !businessDescription || !businessAddress) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Nom de l\'entreprise, description et adresse sont requis' 
+    });
+  }
+
+  if (!fullName) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Nom complet requis' 
+    });
+  }
+
+  if (!photo) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Photo requise' 
+    });
+  }
+
+  if (!identityDocument) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Pièce d\'identité requise' 
+    });
+  }
 
   const user = await User.findById(req.user._id);
   if (user.role === 'vendeur') {
     return res.status(400).json({ success: false, message: 'Vous êtes déjà vendeur' });
   }
 
+  if (user.vendorInfo && user.vendorInfo.validationStatus === 'pending') {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Vous avez déjà une demande en cours de traitement' 
+    });
+  }
+
   user.vendorInfo = {
     businessName,
     businessDescription,
     businessAddress,
+    fullName,
+    photo,
+    identityDocument,
+    validationStatus: 'pending',
     requestedAt: new Date()
   };
-  user.accountStatus = 'pending_vendor';
+  user.accountStatus = 'active';
 
   await user.save();
   res.json({ success: true, message: 'Demande envoyée avec succès' });
