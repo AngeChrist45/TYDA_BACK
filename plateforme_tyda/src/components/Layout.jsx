@@ -22,7 +22,7 @@ export default function Layout() {
   const handleLogout = () => {
     localStorage.removeItem('tyda_token');
     localStorage.removeItem('tyda_user_role');
-    navigate('/login');
+    window.location.href = '/login';
   };
 
   return (

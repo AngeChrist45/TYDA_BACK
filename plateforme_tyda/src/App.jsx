@@ -1,6 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useState, useEffect } from 'react';
 import './index.css';
 
 // Pages
@@ -29,26 +28,34 @@ const queryClient = new QueryClient({
   },
 });
 
-function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isVendor, setIsVendor] = useState(false);
+function ProtectedRoute({ children }) {
+  const token = localStorage.getItem('tyda_token');
+  const location = useLocation();
+  
+  if (!token) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+  
+  return children;
+}
 
-  useEffect(() => {
-    const token = localStorage.getItem('tyda_token');
-    const userRole = localStorage.getItem('tyda_user_role');
-    setIsAuthenticated(!!token);
-    setIsVendor(userRole === 'vendeur');
-  }, []);
+function VendorRoute({ children }) {
+  const token = localStorage.getItem('tyda_token');
+  const userRole = localStorage.getItem('tyda_user_role');
+  const location = useLocation();
+  
+  if (!token) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+  
+  if (userRole !== 'vendeur') {
+    return <Navigate to="/" replace />;
+  }
+  
+  return children;
+}
 
-  const ProtectedRoute = ({ children }) => {
-    return isAuthenticated ? children : <Navigate to="/login" />;
-  };
-
-  const VendorRoute = ({ children }) => {
-    return isAuthenticated && isVendor ? children : <Navigate to="/" />;
-  };
-
-  return (
+function App() {  return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>

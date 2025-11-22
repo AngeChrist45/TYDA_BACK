@@ -89,7 +89,9 @@ export default function Register() {
       });
       localStorage.setItem('tyda_token', response.data.data.token);
       localStorage.setItem('tyda_user_role', response.data.data.user.role);
-      navigate('/');
+      
+      // Forcer le rechargement pour mettre à jour l'état d'authentification
+      window.location.href = '/';
     } catch (err) {
       setError(err.response?.data?.error || err.response?.data?.message || 'Erreur lors de la configuration du PIN');
     } finally {

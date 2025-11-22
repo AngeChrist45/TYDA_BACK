@@ -1,14 +1,17 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { authApi } from '../lib/api';
 import { Phone, Lock, Loader2, ArrowLeft } from 'lucide-react';
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [phone, setPhone] = useState('+225');
   const [pin, setPin] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const from = location.state?.from?.pathname || '/';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,7 +22,9 @@ export default function Login() {
       const response = await authApi.login({ phone, pin });
       localStorage.setItem('tyda_token', response.data.data.token);
       localStorage.setItem('tyda_user_role', response.data.data.user.role);
-      navigate('/');
+      
+      // Forcer le rechargement pour mettre à jour l'état d'authentification
+      window.location.href = from;
     } catch (err) {
       setError(err.response?.data?.error || err.response?.data?.message || 'Numéro ou PIN incorrect');
     } finally {
