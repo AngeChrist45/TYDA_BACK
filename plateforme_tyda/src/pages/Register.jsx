@@ -5,10 +5,11 @@ import { Phone, User, Mail, Lock, Loader2, ArrowLeft, ArrowRight, ShieldCheck } 
 
 export default function Register() {
   const navigate = useNavigate();
-  const [step, setStep] = useState(1); // 1: Phone, 2: OTP, 3: Info + PIN
+  const [step, setStep] = useState(1); // 1: Phone + Info, 2: OTP, 3: PIN
   const [phone, setPhone] = useState('+225');
   const [otp, setOtp] = useState('');
   const [devOtp, setDevOtp] = useState(''); // Code OTP en mode dev
+  const [userId, setUserId] = useState(''); // ID utilisateur temporaire
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -19,22 +20,32 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Step 1: Request OTP
+  // Step 1: Register and Request OTP
   const handleRequestOTP = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
     try {
-      const response = await authApi.requestOTP(phone);
+      // Appeler /register avec phone, firstName, lastName, email
+      const response = await authApi.register({
+        phone,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+      });
+      
       // En développement, le backend renvoie le code OTP
       if (response.data?.data?.otpCode) {
         setDevOtp(response.data.data.otpCode);
         console.log('🔐 Code OTP:', response.data.data.otpCode);
       }
+      if (response.data?.data?.userId) {
+        setUserId(response.data.data.userId);
+      }
       setStep(2);
     } catch (err) {
-      setError(err.response?.data?.error || err.response?.data?.message || 'Erreur lors de l\'envoi de l\'OTP');
+      setError(err.response?.data?.error || err.response?.data?.message || 'Erreur lors de l\'inscription');
     } finally {
       setLoading(false);
     }
@@ -56,8 +67,8 @@ export default function Register() {
     }
   };
 
-  // Step 3: Complete registration with user info + PIN
-  const handleRegister = async (e) => {
+  // Step 3: Set PIN
+  const handleSetPin = async (e) => {
     e.preventDefault();
     if (formData.pin !== formData.confirmPin) {
       setError('Les codes PIN ne correspondent pas');
@@ -71,18 +82,16 @@ export default function Register() {
     setError('');
 
     try {
-      const response = await authApi.register({
+      const response = await authApi.setPin({
         phone,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email,
         pin: formData.pin,
+        confirmPin: formData.confirmPin,
       });
-      localStorage.setItem('tyda_token', response.data.token);
-      localStorage.setItem('tyda_user_role', response.data.user.role);
+      localStorage.setItem('tyda_token', response.data.data.token);
+      localStorage.setItem('tyda_user_role', response.data.data.user.role);
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.error || err.response?.data?.message || 'Erreur lors de l\'inscription');
+      setError(err.response?.data?.error || err.response?.data?.message || 'Erreur lors de la configuration du PIN');
     } finally {
       setLoading(false);
     }
@@ -128,9 +137,55 @@ export default function Register() {
             ))}
           </div>
 
-          {/* Step 1: Phone Number */}
+          {/* Step 1: Phone + Info */}
           {step === 1 && (
             <form onSubmit={handleRequestOTP} className="space-y-5">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Prénom</label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <input
+                      type="text"
+                      value={formData.firstName}
+                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                      placeholder="Prénom"
+                      className="w-full pl-11 pr-4 py-3 bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                      required
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Nom</label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <input
+                      type="text"
+                      value={formData.lastName}
+                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                      placeholder="Nom"
+                      className="w-full pl-11 pr-4 py-3 bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Email</label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="email@exemple.com"
+                    className="w-full pl-11 pr-4 py-3 bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                    required
+                  />
+                </div>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium mb-2">Numéro de téléphone</label>
                 <div className="relative">
@@ -164,11 +219,11 @@ export default function Register() {
                 {loading ? (
                   <>
                     <Loader2 className="h-5 w-5 animate-spin" />
-                    Envoi en cours...
+                    Inscription en cours...
                   </>
                 ) : (
                   <>
-                    Recevoir le code
+                    S'inscrire
                     <ArrowRight className="h-5 w-5" />
                   </>
                 )}
@@ -240,53 +295,13 @@ export default function Register() {
             </form>
           )}
 
-          {/* Step 3: User Info + PIN */}
+          {/* Step 3: PIN Setup */}
           {step === 3 && (
-            <form onSubmit={handleRegister} className="space-y-5">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Prénom</label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                    <input
-                      type="text"
-                      value={formData.firstName}
-                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                      placeholder="Prénom"
-                      className="w-full pl-11 pr-4 py-3 bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                      required
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Nom</label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                    <input
-                      type="text"
-                      value={formData.lastName}
-                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                      placeholder="Nom"
-                      className="w-full pl-11 pr-4 py-3 bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                      required
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">Email</label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="email@exemple.com"
-                    className="w-full pl-11 pr-4 py-3 bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                    required
-                  />
-                </div>
+            <form onSubmit={handleSetPin} className="space-y-5">
+              <div className="text-center mb-4">
+                <p className="text-sm text-muted-foreground">
+                  Créez un code PIN pour sécuriser votre compte
+                </p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -321,7 +336,7 @@ export default function Register() {
                   </div>
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground">🔒 Le code PIN sécurise vos connexions futures</p>
+              <p className="text-xs text-muted-foreground text-center">🔒 Le code PIN sécurise vos connexions futures</p>
 
               {error && (
                 <div className="p-4 bg-destructive/10 border border-destructive/30 text-destructive rounded-lg text-sm flex items-start gap-2">
@@ -338,7 +353,7 @@ export default function Register() {
                 {loading ? (
                   <>
                     <Loader2 className="h-5 w-5 animate-spin" />
-                    Création du compte...
+                    Finalisation...
                   </>
                 ) : (
                   'Créer mon compte'
