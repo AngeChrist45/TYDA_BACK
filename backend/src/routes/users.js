@@ -59,7 +59,7 @@ router.put('/profile', auth, asyncHandler(async (req, res) => {
   if (firstName) updates.firstName = firstName.trim();
   if (lastName) updates.lastName = lastName.trim();
   if (phone) updates.phone = phone;
-  if (address) updates.address = { ...user.address, ...address };
+  if (address !== undefined) updates.address = address ? address.trim() : '';
   if (preferences) updates.preferences = { ...user.preferences, ...preferences };
 
   // Mettre à jour les infos vendeur si applicable et autorisé
