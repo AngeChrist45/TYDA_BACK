@@ -40,7 +40,14 @@ router.post('/request', auth, asyncHandler(async (req, res) => {
     });
   }
 
-  const user = await User.findById(req.user._id);
+  const user = await User.findById(req.user.userId);
+  if (!user) {
+    return res.status(404).json({ 
+      success: false, 
+      message: 'Utilisateur introuvable' 
+    });
+  }
+  
   if (user.role === 'vendeur') {
     return res.status(400).json({ success: false, message: 'Vous êtes déjà vendeur' });
   }
@@ -70,9 +77,9 @@ router.post('/request', auth, asyncHandler(async (req, res) => {
 
 // Get vendor dashboard
 router.get('/dashboard', [auth, authorize('vendeur')], asyncHandler(async (req, res) => {
-  const products = await Product.find({ vendor: req.user._id });
+  const products = await Product.find({ vendor: req.user.userId });
   const orders = await Order.find({ 'items.product': { $in: products.map(p => p._id) } });
-  const negotiations = await Negotiation.find({ vendor: req.user._id, status: 'pending' });
+  const negotiations = await Negotiation.find({ vendor: req.user.userId, status: 'pending' });
 
   const revenue = orders
     .filter(o => o.status === 'delivered')
@@ -91,7 +98,7 @@ router.get('/dashboard', [auth, authorize('vendeur')], asyncHandler(async (req, 
 
 // Get vendor products
 router.get('/products', [auth, authorize('vendeur')], asyncHandler(async (req, res) => {
-  const products = await Product.find({ vendor: req.user._id })
+  const products = await Product.find({ vendor: req.user.userId })
     .populate('category')
     .sort({ createdAt: -1 });
 
@@ -102,7 +109,7 @@ router.get('/products', [auth, authorize('vendeur')], asyncHandler(async (req, r
 router.post('/products', [auth, authorize('vendeur')], asyncHandler(async (req, res) => {
   const productData = {
     ...req.body,
-    vendor: req.user._id
+    vendor: req.user.userId
   };
 
   const product = await Product.create(productData);
@@ -113,7 +120,7 @@ router.post('/products', [auth, authorize('vendeur')], asyncHandler(async (req, 
 
 // Update product
 router.put('/products/:id', [auth, authorize('vendeur')], asyncHandler(async (req, res) => {
-  const product = await Product.findOne({ _id: req.params.id, vendor: req.user._id });
+  const product = await Product.findOne({ _id: req.params.id, vendor: req.user.userId });
   
   if (!product) {
     return res.status(404).json({ success: false, message: 'Produit non trouvé' });
@@ -128,7 +135,7 @@ router.put('/products/:id', [auth, authorize('vendeur')], asyncHandler(async (re
 
 // Delete product
 router.delete('/products/:id', [auth, authorize('vendeur')], asyncHandler(async (req, res) => {
-  const product = await Product.findOne({ _id: req.params.id, vendor: req.user._id });
+  const product = await Product.findOne({ _id: req.params.id, vendor: req.user.userId });
   
   if (!product) {
     return res.status(404).json({ success: false, message: 'Produit non trouvé' });
@@ -140,7 +147,7 @@ router.delete('/products/:id', [auth, authorize('vendeur')], asyncHandler(async 
 
 // Get vendor negotiations
 router.get('/negotiations', [auth, authorize('vendeur')], asyncHandler(async (req, res) => {
-  const negotiations = await Negotiation.find({ vendor: req.user._id })
+  const negotiations = await Negotiation.find({ vendor: req.user.userId })
     .populate(['product', 'customer'])
     .sort({ createdAt: -1 });
 
@@ -151,7 +158,7 @@ router.get('/negotiations', [auth, authorize('vendeur')], asyncHandler(async (re
 router.put('/negotiations/:id', [auth, authorize('vendeur')], asyncHandler(async (req, res) => {
   const { action, counterOffer } = req.body;
 
-  const negotiation = await Negotiation.findOne({ _id: req.params.id, vendor: req.user._id });
+  const negotiation = await Negotiation.findOne({ _id: req.params.id, vendor: req.user.userId });
   
   if (!negotiation) {
     return res.status(404).json({ success: false, message: 'Négociation non trouvée' });

@@ -39,6 +39,7 @@ router.put('/profile', auth, asyncHandler(async (req, res) => {
   const {
     firstName,
     lastName,
+    email,
     phone,
     address,
     vendorInfo,
@@ -58,6 +59,7 @@ router.put('/profile', auth, asyncHandler(async (req, res) => {
   const updates = {};
   if (firstName) updates.firstName = firstName.trim();
   if (lastName) updates.lastName = lastName.trim();
+  if (email !== undefined) updates.email = email ? email.trim() : null;
   if (phone) updates.phone = phone;
   if (address !== undefined) updates.address = address ? address.trim() : '';
   if (preferences) updates.preferences = { ...user.preferences, ...preferences };
