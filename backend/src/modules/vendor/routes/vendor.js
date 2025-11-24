@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { protect } = require('../../middleware/auth');
-const Product = require('../../models/Product');
-const Order = require('../../models/Order');
-const User = require('../../models/User');
+const { auth } = require('../../../middleware/auth');
+const Product = require('../../../models/Product');
+const Order = require('../../../models/Order');
+const User = require('../../../models/User');
 
 // Middleware pour vérifier que l'utilisateur est un vendeur approuvé
 const isApprovedVendor = async (req, res, next) => {
@@ -29,7 +29,7 @@ const isApprovedVendor = async (req, res, next) => {
 };
 
 // GET /api/vendor/dashboard - Statistiques du vendeur
-router.get('/dashboard', protect, isApprovedVendor, async (req, res) => {
+router.get('/dashboard', auth, isApprovedVendor, async (req, res) => {
   try {
     const vendorId = req.user.userId;
 
@@ -93,7 +93,7 @@ router.get('/dashboard', protect, isApprovedVendor, async (req, res) => {
 });
 
 // GET /api/vendor/products - Liste des produits du vendeur
-router.get('/products', protect, isApprovedVendor, async (req, res) => {
+router.get('/products', auth, isApprovedVendor, async (req, res) => {
   try {
     const products = await Product.find({ vendor: req.user.userId })
       .populate('category', 'name')
@@ -113,7 +113,7 @@ router.get('/products', protect, isApprovedVendor, async (req, res) => {
 });
 
 // GET /api/vendor/orders - Commandes du vendeur (historique)
-router.get('/orders', protect, isApprovedVendor, async (req, res) => {
+router.get('/orders', auth, isApprovedVendor, async (req, res) => {
   try {
     const vendorId = req.user.userId;
 
@@ -152,7 +152,7 @@ router.get('/orders', protect, isApprovedVendor, async (req, res) => {
 });
 
 // GET /api/vendor/notifications - Notifications du vendeur
-router.get('/notifications', protect, isApprovedVendor, async (req, res) => {
+router.get('/notifications', auth, isApprovedVendor, async (req, res) => {
   try {
     const vendor = await User.findById(req.user.userId);
     
@@ -176,7 +176,7 @@ router.get('/notifications', protect, isApprovedVendor, async (req, res) => {
 });
 
 // PUT /api/vendor/notifications/:id/read - Marquer une notification comme lue
-router.put('/notifications/:id/read', protect, isApprovedVendor, async (req, res) => {
+router.put('/notifications/:id/read', auth, isApprovedVendor, async (req, res) => {
   try {
     const vendor = await User.findById(req.user.userId);
     const notification = vendor.notifications.id(req.params.id);
