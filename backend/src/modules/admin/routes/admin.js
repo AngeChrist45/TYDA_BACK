@@ -94,10 +94,10 @@ router.get('/vendor-requests', [
 ], asyncHandler(async (req, res) => {
   try {
     const vendors = await User.find({
-      role: 'vendeur'
+      'vendorInfo.validationStatus': { $exists: true }
     })
-      .select('firstName lastName email phone vendorInfo createdAt accountStatus')
-      .sort({ createdAt: -1 })
+      .select('firstName lastName email phone vendorInfo createdAt accountStatus role')
+      .sort({ 'vendorInfo.requestedAt': -1, createdAt: -1 })
       .lean();
 
     res.json({
