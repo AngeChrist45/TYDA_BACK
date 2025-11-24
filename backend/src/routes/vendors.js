@@ -52,7 +52,8 @@ router.post('/request', auth, asyncHandler(async (req, res) => {
     return res.status(400).json({ success: false, message: 'Vous êtes déjà vendeur' });
   }
 
-  if (user.vendorInfo && user.vendorInfo.validationStatus === 'pending') {
+  // Vérifier si une demande complète existe déjà
+  if (user.vendorInfo && user.vendorInfo.validationStatus === 'pending' && user.vendorInfo.businessName) {
     return res.status(400).json({ 
       success: false, 
       message: 'Vous avez déjà une demande en cours de traitement' 
