@@ -3,6 +3,7 @@ const User = require('../../../models/User');
 const Product = require('../../../models/Product');
 const Category = require('../../../models/Category');
 const Negotiation = require('../../../models/Negotiation');
+const Order = require('../../../models/Order');
 const { auth, authorize } = require('../../../middleware/auth');
 const { validateInput, validateObjectId } = require('../../../middleware/validation');
 const { asyncHandler } = require('../../../middleware/errorHandler');
@@ -1032,6 +1033,259 @@ router.delete('/categories/:id', [
     res.status(500).json({ 
       success: false, 
       message: 'Erreur lors de la suppression de la catégorie' 
+    });
+  }
+}));
+
+/**
+ * @route   GET /api/admin/orders
+ * @desc    Obtenir toutes les commandes avec filtres
+ * @access  Private (Admin)
+ */
+router.get('/orders', [
+  auth,
+  authorize('admin')
+], asyncHandler(async (req, res) => {
+  try {
+    const { status, startDate, endDate, page = 1, limit = 20 } = req.query;
+    
+    // Construire le filtre
+    const filter = {};
+    if (status) filter.status = status;
+    if (startDate || endDate) {
+      filter.createdAt = {};
+      if (startDate) filter.createdAt.$gte = new Date(startDate);
+      if (endDate) filter.createdAt.$lte = new Date(endDate);
+    }
+
+    const skip = (page - 1) * limit;
+    
+    const orders = await Order.find(filter)
+      .populate('customer', 'firstName lastName phone email')
+      .populate({
+        path: 'items.product',
+        select: 'name images price category',
+        populate: { path: 'category', select: 'name' }
+      })
+      .populate('items.vendor', 'firstName lastName phone vendorInfo.businessName')
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit))
+      .skip(skip)
+      .lean();
+
+    const total = await Order.countDocuments(filter);
+
+    // Grouper les commandes par vendeur
+    const ordersByVendor = orders.map(order => {
+      const vendorGroups = {};
+      
+      order.items.forEach(item => {
+        const vendorId = item.vendor._id.toString();
+        if (!vendorGroups[vendorId]) {
+          vendorGroups[vendorId] = {
+            vendor: item.vendor,
+            items: [],
+            totalAmount: 0
+          };
+        }
+        vendorGroups[vendorId].items.push(item);
+        vendorGroups[vendorId].totalAmount += item.price * item.quantity;
+      });
+
+      return {
+        ...order,
+        vendorGroups: Object.values(vendorGroups)
+      };
+    });
+
+    res.json({
+      success: true,
+      data: {
+        orders: ordersByVendor,
+        pagination: {
+          current: parseInt(page),
+          total: Math.ceil(total / limit),
+          count: orders.length,
+          totalOrders: total
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Erreur récupération commandes admin:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erreur lors de la récupération des commandes' 
+    });
+  }
+}));
+
+/**
+ * @route   POST /api/admin/orders/:id/notify-vendor
+ * @desc    Notifier un vendeur spécifique d'une commande
+ * @access  Private (Admin)
+ */
+router.post('/orders/:id/notify-vendor', [
+  auth,
+  authorize('admin')
+], asyncHandler(async (req, res) => {
+  try {
+    const { vendorId, message } = req.body;
+
+    if (!vendorId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'ID du vendeur requis' 
+      });
+    }
+
+    const order = await Order.findById(req.params.id)
+      .populate('customer', 'firstName lastName phone')
+      .populate('items.product', 'name images');
+
+    if (!order) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Commande non trouvée' 
+      });
+    }
+
+    const vendor = await User.findById(vendorId);
+    if (!vendor || vendor.vendorInfo?.validationStatus !== 'approved') {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Vendeur non trouvé ou non approuvé' 
+      });
+    }
+
+    // Filtrer les items du vendeur
+    const vendorItems = order.items.filter(
+      item => item.vendor.toString() === vendorId
+    );
+
+    if (vendorItems.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Aucun produit de ce vendeur dans cette commande' 
+      });
+    }
+
+    // Calculer le total pour le vendeur
+    const vendorTotal = vendorItems.reduce(
+      (sum, item) => sum + (item.price * item.quantity), 
+      0
+    );
+
+    // Créer la notification
+    const notification = {
+      type: 'order_received',
+      title: '🛍️ Nouvelle commande',
+      message: message || `Nouvelle commande #${order._id.toString().slice(-6)} de ${order.customer.firstName} ${order.customer.lastName}`,
+      read: false,
+      data: {
+        orderId: order._id,
+        orderNumber: order._id.toString().slice(-6),
+        customerName: `${order.customer.firstName} ${order.customer.lastName}`,
+        customerPhone: order.customer.phone,
+        items: vendorItems.map(item => ({
+          product: item.product.name,
+          quantity: item.quantity,
+          price: item.price
+        })),
+        totalAmount: vendorTotal,
+        shippingAddress: order.shippingAddress
+      }
+    };
+
+    vendor.notifications.push(notification);
+    await vendor.save();
+
+    res.json({
+      success: true,
+      message: 'Vendeur notifié avec succès'
+    });
+  } catch (error) {
+    console.error('Erreur notification vendeur:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erreur lors de la notification du vendeur' 
+    });
+  }
+}));
+
+/**
+ * @route   PUT /api/admin/orders/:id/status
+ * @desc    Mettre à jour le statut d'une commande
+ * @access  Private (Admin)
+ */
+router.put('/orders/:id/status', [
+  auth,
+  authorize('admin')
+], asyncHandler(async (req, res) => {
+  try {
+    const { status, note } = req.body;
+
+    const validStatuses = ['en_attente', 'confirme', 'prepare', 'expedie', 'livre', 'annule'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Statut invalide' 
+      });
+    }
+
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Commande non trouvée' 
+      });
+    }
+
+    // Mettre à jour le statut
+    order.status = status;
+    order.statusHistory.push({
+      status,
+      timestamp: new Date(),
+      note,
+      updatedBy: req.user.userId
+    });
+
+    await order.save();
+
+    // Notifier le client
+    const customer = await User.findById(order.customer);
+    if (customer) {
+      const statusMessages = {
+        confirme: 'Votre commande a été confirmée',
+        prepare: 'Votre commande est en préparation',
+        expedie: 'Votre commande a été expédiée',
+        livre: 'Votre commande a été livrée',
+        annule: 'Votre commande a été annulée'
+      };
+
+      customer.notifications.push({
+        type: 'order_status_update',
+        title: 'Mise à jour commande',
+        message: statusMessages[status],
+        read: false,
+        data: {
+          orderId: order._id,
+          status,
+          note
+        }
+      });
+      await customer.save();
+    }
+
+    res.json({
+      success: true,
+      message: 'Statut de la commande mis à jour',
+      data: { order }
+    });
+  } catch (error) {
+    console.error('Erreur mise à jour statut commande:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erreur lors de la mise à jour du statut' 
     });
   }
 }));
