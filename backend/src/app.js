@@ -24,6 +24,7 @@ const clientProductsRoutes = require('./modules/client/routes/products');
 const clientProfileRoutes = require('./modules/client/routes/profile');
 const vendorProductsRoutes = require('./modules/vendor/routes/products');
 const vendorProfileRoutes = require('./modules/vendor/routes/profile');
+const vendorDashboardRoutes = require('./modules/vendor/routes/vendor');
 
 // Import des middlewares
 const { errorHandler } = require('./middleware/errorHandler');
@@ -108,6 +109,7 @@ app.use('/api/client', clientProductsRoutes);
 app.use('/api/client', clientProfileRoutes);
 app.use('/api/vendor', vendorProductsRoutes);
 app.use('/api/vendor', vendorProfileRoutes);
+app.use('/api/vendor', vendorDashboardRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/negotiations', negotiationRoutes);
