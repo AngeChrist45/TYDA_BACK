@@ -1,14 +1,12 @@
 const express = require('express');
-const multer = require('multer');
 const Product = require('../../../models/Product');
 const Category = require('../../../models/Category');
 const { auth, authorize, activeVendor, productOwnerOrAdmin } = require('../../../middleware/auth');
 const { validateObjectId, validatePagination } = require('../../../middleware/validation');
 const { asyncHandler } = require('../../../middleware/errorHandler');
+const { upload } = require('../../../config/cloudinary');
 
 const router = express.Router();
-
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024, files: 5 } });
 
 // GET /api/vendor/products/mine
 router.get('/products/mine', [ auth, authorize('vendeur'), validatePagination ], asyncHandler(async (req, res) => {
@@ -28,15 +26,12 @@ router.get('/products/mine', [ auth, authorize('vendeur'), validatePagination ],
 
 // POST /api/vendor/products
 router.post('/products', [ auth, authorize('vendeur'), activeVendor, upload.array('images', 5) ], asyncHandler(async (req, res) => {
-  console.log('📦 Creating product - Body:', req.body);
-  console.log('📷 Files:', req.files?.length || 0);
-  
   const { title, description, price, category, specifications, customAttributes, inventory, shipping, tags, seo } = req.body;
-  
+
   // Validation des champs requis
   if (!title || !description || !price || !category) {
-    return res.status(400).json({ 
-      success: false, 
+    return res.status(400).json({
+      success: false,
       message: 'Champs requis manquants',
       missing: {
         title: !title,
@@ -45,9 +40,7 @@ router.post('/products', [ auth, authorize('vendeur'), activeVendor, upload.arra
         category: !category
       }
     });
-  }
-  
-  const categoryDoc = await Category.findById(category);
+  }  const categoryDoc = await Category.findById(category);
   if (!categoryDoc) return res.status(400).json({ success: false, message: 'Catégorie invalide' });
 
   // Générer le slug
@@ -63,12 +56,17 @@ router.post('/products', [ auth, authorize('vendeur'), activeVendor, upload.arra
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '');
   const slug = `${baseSlug}-${Date.now()}`;
-  console.log('✅ Slug généré:', slug);
 
+  // Images uploadées sur Cloudinary
   const images = [];
   if (req.files?.length) {
     req.files.forEach((file, index) => {
-      images.push({ url: `https://via.placeholder.com/600x400?text=Image+${index + 1}`, alt: `${title} - Image ${index + 1}`, isPrimary: index === 0 });
+      images.push({ 
+        url: file.path, // Cloudinary retourne l'URL dans file.path
+        alt: `${title} - Image ${index + 1}`, 
+        isPrimary: index === 0,
+        publicId: file.filename // Pour pouvoir supprimer l'image plus tard
+      });
     });
   }
 

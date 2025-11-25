@@ -106,7 +106,6 @@ export const vendorApi = {
   markNotificationAsRead: (id) => api.put(`/vendor/notifications/${id}/read`),
   // Gestion produits
   createProduct: (data) => {
-    console.log('🔧 Creating product with data:', data);
     const formData = new FormData();
     formData.append('title', data.title);
     formData.append('description', data.description);
@@ -114,18 +113,8 @@ export const vendorApi = {
     formData.append('category', data.category);
     formData.append('inventory', JSON.stringify({ quantity: data.quantity, trackInventory: true }));
     
-    console.log('📦 FormData fields:');
-    console.log('  - title:', data.title);
-    console.log('  - description:', data.description);
-    console.log('  - price:', data.price);
-    console.log('  - category:', data.category);
-    console.log('  - inventory:', JSON.stringify({ quantity: data.quantity, trackInventory: true }));
-    
     if (data.images && data.images.length > 0) {
       data.images.forEach(file => formData.append('images', file));
-      console.log('  - images:', data.images.length, 'files');
-    } else {
-      console.log('  - images: none');
     }
     
     return api.post('/vendor/products', formData, {

@@ -64,12 +64,6 @@ export default function Layout() {
                   <Link to="/cart" className="p-2 hover:bg-accent hover:text-accent-foreground rounded-lg transition-all relative">
                     <ShoppingCart className="h-5 w-5" />
                   </Link>
-                  {isVendor && (
-                    <Link to="/vendor" className="hidden md:flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-all shadow-sm hover:shadow-md">
-                      <Store className="h-4 w-4" />
-                      <span className="font-medium">Espace Vendeur</span>
-                    </Link>
-                  )}
                   <div className="relative">
                     <button
                       onClick={() => setIsMenuOpen(!isMenuOpen)}

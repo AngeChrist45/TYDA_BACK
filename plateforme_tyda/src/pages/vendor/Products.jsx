@@ -126,9 +126,6 @@ export default function VendorProducts() {
       images: selectedImages,
     };
 
-    console.log('📤 Submitting product:', data);
-    console.log('🖼️ Images:', selectedImages.length);
-
     if (editingProduct) {
       updateProduct.mutate({ id: editingProduct._id, data });
     } else {
