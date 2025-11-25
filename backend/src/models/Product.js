@@ -169,7 +169,7 @@ productSchema.virtual('primaryImage').get(function() {
 
 // Middleware pre-save pour générer le slug
 productSchema.pre('save', function(next) {
-  if (this.isModified('title')) {
+  if (this.isNew || this.isModified('title')) {
     const baseSlug = this.title
       .toLowerCase()
       .replace(/[àáâãäå]/g, 'a')

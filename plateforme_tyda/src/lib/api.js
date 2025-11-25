@@ -98,12 +98,55 @@ export const negotiationsApi = {
 
 export const vendorApi = {
   requestVendor: (data) => api.post('/vendors/request', data),
-  getDashboard: () => api.get('/vendors/dashboard'),
-  getProducts: () => api.get('/vendors/products'),
-  createProduct: (data) => api.post('/vendors/products', data),
-  updateProduct: (id, data) => api.put(`/vendors/products/${id}`, data),
-  deleteProduct: (id) => api.delete(`/vendors/products/${id}`),
-  getNegotiations: () => api.get('/vendors/negotiations'),
+  // Dashboard vendeur
+  getDashboard: () => api.get('/vendor/dashboard'),
+  getProducts: () => api.get('/vendor/products/mine'),
+  getOrders: () => api.get('/vendor/orders'),
+  getNotifications: () => api.get('/vendor/notifications'),
+  markNotificationAsRead: (id) => api.put(`/vendor/notifications/${id}/read`),
+  // Gestion produits
+  createProduct: (data) => {
+    console.log('🔧 Creating product with data:', data);
+    const formData = new FormData();
+    formData.append('title', data.title);
+    formData.append('description', data.description);
+    formData.append('price', data.price);
+    formData.append('category', data.category);
+    formData.append('inventory', JSON.stringify({ quantity: data.quantity, trackInventory: true }));
+    
+    console.log('📦 FormData fields:');
+    console.log('  - title:', data.title);
+    console.log('  - description:', data.description);
+    console.log('  - price:', data.price);
+    console.log('  - category:', data.category);
+    console.log('  - inventory:', JSON.stringify({ quantity: data.quantity, trackInventory: true }));
+    
+    if (data.images && data.images.length > 0) {
+      data.images.forEach(file => formData.append('images', file));
+      console.log('  - images:', data.images.length, 'files');
+    } else {
+      console.log('  - images: none');
+    }
+    
+    return api.post('/vendor/products', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
+  updateProduct: (id, data) => {
+    const formData = new FormData();
+    if (data.title) formData.append('title', data.title);
+    if (data.description) formData.append('description', data.description);
+    if (data.price) formData.append('price', data.price);
+    if (data.category) formData.append('category', data.category);
+    if (data.quantity) formData.append('inventory', JSON.stringify({ quantity: data.quantity }));
+    if (data.images && data.images.length > 0) {
+      data.images.forEach(file => formData.append('images', file));
+    }
+    return api.put(`/vendor/products/${id}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
+  deleteProduct: (id) => api.delete(`/vendor/products/${id}`),
 };
 
 export const userApi = {

@@ -28,7 +28,25 @@ router.get('/products/mine', [ auth, authorize('vendeur'), validatePagination ],
 
 // POST /api/vendor/products
 router.post('/products', [ auth, authorize('vendeur'), activeVendor, upload.array('images', 5) ], asyncHandler(async (req, res) => {
+  console.log('📦 Creating product - Body:', req.body);
+  console.log('📷 Files:', req.files?.length || 0);
+  
   const { title, description, price, category, specifications, customAttributes, inventory, shipping, tags, seo } = req.body;
+  
+  // Validation des champs requis
+  if (!title || !description || !price || !category) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Champs requis manquants',
+      missing: {
+        title: !title,
+        description: !description,
+        price: !price,
+        category: !category
+      }
+    });
+  }
+  
   const categoryDoc = await Category.findById(category);
   if (!categoryDoc) return res.status(400).json({ success: false, message: 'Catégorie invalide' });
 
