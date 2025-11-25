@@ -169,7 +169,14 @@ productSchema.virtual('primaryImage').get(function() {
 
 // Middleware pre-save pour générer le slug
 productSchema.pre('save', function(next) {
+  console.log('🔍 Pre-save hook - isNew:', this.isNew, 'isModified(title):', this.isModified('title'), 'title:', this.title);
+  
   if (this.isNew || this.isModified('title')) {
+    if (!this.title) {
+      console.error('❌ ERREUR: Pas de titre pour générer le slug!');
+      return next(new Error('Title is required to generate slug'));
+    }
+    
     const baseSlug = this.title
       .toLowerCase()
       .replace(/[àáâãäå]/g, 'a')
@@ -183,6 +190,7 @@ productSchema.pre('save', function(next) {
       .replace(/^-|-$/g, '');
     
     this.slug = `${baseSlug}-${Date.now()}`;
+    console.log('✅ Slug généré:', this.slug);
   }
   
   // Calculer le prix minimum si la négociation est activée
