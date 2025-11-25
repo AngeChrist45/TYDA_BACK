@@ -1,4 +1,5 @@
 const express = require('express');
+const jwt = require('jsonwebtoken');
 const User = require('../../../models/User');
 const Product = require('../../../models/Product');
 const Category = require('../../../models/Category');
@@ -155,6 +156,13 @@ router.put('/vendors/:id/approve', [
 
     await user.save();
 
+    // Générer un nouveau token avec le rôle vendeur
+    const newToken = jwt.sign(
+      { userId: user._id, role: 'vendeur', phone: user.phone },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN || '30d' }
+    );
+
     console.log('[ADMIN] Vendeur approuvé:', { userId: user._id, businessName: user.vendorInfo.businessName });
 
     res.json({
@@ -164,7 +172,8 @@ router.put('/vendors/:id/approve', [
         userId: user._id,
         role: user.role,
         validationStatus: user.vendorInfo.validationStatus,
-        validatedAt: user.vendorInfo.validatedAt
+        validatedAt: user.vendorInfo.validatedAt,
+        newToken // Nouveau token avec rôle vendeur
       }
     });
   } catch (error) {
@@ -397,6 +406,25 @@ router.put('/products/:id/validate', [
     }
 
     await product.save();
+
+    // Notifier le vendeur de l'approbation
+    const vendor = await User.findById(product.vendor._id);
+    if (vendor) {
+      vendor.notifications.push({
+        type: 'product_approved',
+        title: 'Produit approuvé',
+        message: `Votre produit "${product.title}" a été approuvé et est maintenant visible sur la plateforme.${enableNegotiation ? ` Négociation activée à ${negotiationPercentage}%.` : ''}`,
+        read: false,
+        data: {
+          productId: product._id,
+          productTitle: product.title,
+          negotiationEnabled: enableNegotiation || false,
+          negotiationPercentage: negotiationPercentage || null
+        }
+      });
+      await vendor.save();
+    }
+
     res.json({ success: true, message: 'Produit validé avec succès', data: { product } });
   } else {
     if (!rejectionReason?.trim()) {
@@ -408,6 +436,24 @@ router.put('/products/:id/validate', [
     product.validation.validatedAt = new Date();
     product.validation.adminNotes = adminNotes;
     await product.save();
+
+    // Notifier le vendeur du refus
+    const vendor = await User.findById(product.vendor._id);
+    if (vendor) {
+      vendor.notifications.push({
+        type: 'product_rejected',
+        title: 'Produit refusé',
+        message: `Votre produit "${product.title}" a été refusé. Raison : ${rejectionReason}`,
+        read: false,
+        data: {
+          productId: product._id,
+          productTitle: product.title,
+          rejectionReason: rejectionReason
+        }
+      });
+      await vendor.save();
+    }
+
     res.json({ success: true, message: 'Produit refusé', data: { product } });
   }
 }));

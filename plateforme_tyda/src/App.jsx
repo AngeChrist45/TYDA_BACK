@@ -8,12 +8,15 @@ import Products from './pages/Products';
 import ProductDetail from './pages/ProductDetail';
 import Cart from './pages/Cart';
 import Favorites from './pages/Favorites';
+import Orders from './pages/Orders';
 import Profile from './pages/Profile';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import NotFound from './pages/NotFound';
 import VendorDashboard from './pages/vendor/Dashboard';
 import VendorProducts from './pages/vendor/Products';
 import VendorNegotiations from './pages/vendor/Negotiations';
+import VendorDashboardNew from './pages/VendorDashboard';
 
 // Layout
 import Layout from './components/Layout';
@@ -70,15 +73,20 @@ function App() {  return (
             <Route path="/products/:id" element={<ProductDetail />} />
             <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
             <Route path="/favorites" element={<ProtectedRoute><Favorites /></ProtectedRoute>} />
+            <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/vendor-dashboard" element={<ProtectedRoute><VendorDashboardNew /></ProtectedRoute>} />
+            <Route path="/vendor/products" element={<ProtectedRoute><VendorProducts /></ProtectedRoute>} />
           </Route>
 
-          {/* Vendor routes */}
+          {/* Vendor routes (old dashboard - peut être retiré) */}
           <Route path="/vendor" element={<VendorRoute><VendorLayout /></VendorRoute>}>
             <Route index element={<VendorDashboard />} />
-            <Route path="products" element={<VendorProducts />} />
             <Route path="negotiations" element={<VendorNegotiations />} />
           </Route>
+
+          {/* 404 - Not Found */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>

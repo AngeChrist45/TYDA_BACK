@@ -9,6 +9,7 @@
     "setup": "node setup.js",
     "seed": "node src/scripts/seedDatabase.js",
     "seed:clean": "node src/scripts/seedDatabase.js clean",
+    "categories:init": "node src/scripts/createCategories.js",
     "test": "jest",
     "test:watch": "jest --watch"
   },

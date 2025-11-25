@@ -50,6 +50,21 @@ router.post('/products', [ auth, authorize('vendeur'), activeVendor, upload.arra
   const categoryDoc = await Category.findById(category);
   if (!categoryDoc) return res.status(400).json({ success: false, message: 'Catégorie invalide' });
 
+  // Générer le slug
+  const baseSlug = title.trim()
+    .toLowerCase()
+    .replace(/[àáâãäå]/g, 'a')
+    .replace(/[èéêë]/g, 'e')
+    .replace(/[ìíîï]/g, 'i')
+    .replace(/[òóôõö]/g, 'o')
+    .replace(/[ùúûü]/g, 'u')
+    .replace(/[ç]/g, 'c')
+    .replace(/[^a-z0-9]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+  const slug = `${baseSlug}-${Date.now()}`;
+  console.log('✅ Slug généré:', slug);
+
   const images = [];
   if (req.files?.length) {
     req.files.forEach((file, index) => {
@@ -60,6 +75,7 @@ router.post('/products', [ auth, authorize('vendeur'), activeVendor, upload.arra
   const product = new Product({
     title: title.trim(),
     description: description.trim(),
+    slug,
     price: parseFloat(price),
     vendor: req.user.userId,
     category,
