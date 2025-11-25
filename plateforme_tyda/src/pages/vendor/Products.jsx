@@ -11,6 +11,7 @@ export default function VendorProducts() {
   const [editingProduct, setEditingProduct] = useState(null);
   const [selectedImages, setSelectedImages] = useState([]);
   const [imagePreviewUrls, setImagePreviewUrls] = useState([]);
+  const [modal, setModal] = useState({ show: false, type: '', message: '' });
 
   // Vérifier que l'utilisateur est un vendeur approuvé
   const { data: profileData } = useQuery({
@@ -48,7 +49,10 @@ export default function VendorProducts() {
       setShowForm(false);
       setSelectedImages([]);
       setImagePreviewUrls([]);
-      alert('Produit soumis ! Il sera visible après validation par l\'admin.');
+      setModal({ show: true, type: 'success', message: 'Produit soumis avec succès ! Il sera visible après validation par l\'admin.' });
+    },
+    onError: (error) => {
+      setModal({ show: true, type: 'error', message: error.response?.data?.message || 'Erreur lors de la création du produit' });
     },
   });
 
@@ -61,7 +65,10 @@ export default function VendorProducts() {
       setShowForm(false);
       setSelectedImages([]);
       setImagePreviewUrls([]);
-      alert('Produit mis à jour ! Il sera re-validé par l\'admin.');
+      setModal({ show: true, type: 'success', message: 'Produit mis à jour ! Il sera re-validé par l\'admin.' });
+    },
+    onError: (error) => {
+      setModal({ show: true, type: 'error', message: error.response?.data?.message || 'Erreur lors de la mise à jour du produit' });
     },
   });
 
@@ -70,7 +77,10 @@ export default function VendorProducts() {
     onSuccess: () => {
       queryClient.invalidateQueries(['vendor-products']);
       queryClient.invalidateQueries(['vendor-dashboard']);
-      alert('Produit supprimé!');
+      setModal({ show: true, type: 'success', message: 'Produit supprimé avec succès !' });
+    },
+    onError: (error) => {
+      setModal({ show: true, type: 'error', message: error.response?.data?.message || 'Erreur lors de la suppression du produit' });
     },
   });
 
@@ -460,6 +470,39 @@ export default function VendorProducts() {
           <p className="text-sm text-gray-400">
             Ajoutez vos premiers produits pour commencer à vendre
           </p>
+        </div>
+      )}
+
+      {/* Modale de notification */}
+      {modal.show && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full animate-in fade-in zoom-in duration-200">
+            <div className={`p-6 rounded-t-xl ${modal.type === 'success' ? 'bg-green-50' : 'bg-red-50'}`}>
+              <div className="flex items-center gap-3">
+                {modal.type === 'success' ? (
+                  <CheckCircle className="h-8 w-8 text-green-600" />
+                ) : (
+                  <XCircle className="h-8 w-8 text-red-600" />
+                )}
+                <h3 className={`text-xl font-bold ${modal.type === 'success' ? 'text-green-900' : 'text-red-900'}`}>
+                  {modal.type === 'success' ? 'Succès !' : 'Erreur'}
+                </h3>
+              </div>
+            </div>
+            <div className="p-6">
+              <p className="text-gray-700 mb-6">{modal.message}</p>
+              <button
+                onClick={() => setModal({ show: false, type: '', message: '' })}
+                className={`w-full py-3 rounded-lg font-semibold transition-colors ${
+                  modal.type === 'success'
+                    ? 'bg-green-600 hover:bg-green-700 text-white'
+                    : 'bg-red-600 hover:bg-red-700 text-white'
+                }`}
+              >
+                Fermer
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
