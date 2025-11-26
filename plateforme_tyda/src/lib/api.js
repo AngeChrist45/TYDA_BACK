@@ -142,6 +142,7 @@ export const userApi = {
   getProfile: () => api.get('/users/profile'),
   updateProfile: (data) => api.put('/users/profile', data),
   updateAddress: (data) => api.put('/users/address', data),
+  deleteNotification: (notificationId) => api.delete(`/users/notifications/${notificationId}`),
 };
 
 export default api;

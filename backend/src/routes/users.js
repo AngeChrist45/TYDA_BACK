@@ -95,6 +95,36 @@ router.put('/profile', auth, asyncHandler(async (req, res) => {
 }));
 
 /**
+ * @route   DELETE /api/users/notifications/:notificationId
+ * @desc    Supprimer une notification
+ * @access  Private
+ */
+router.delete('/notifications/:notificationId', auth, asyncHandler(async (req, res) => {
+  const { notificationId } = req.params;
+
+  const user = await User.findById(req.user.userId);
+
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      message: 'Utilisateur introuvable'
+    });
+  }
+
+  // Filtrer pour supprimer la notification
+  user.notifications = user.notifications.filter(
+    notif => notif._id.toString() !== notificationId
+  );
+
+  await user.save();
+
+  res.json({
+    success: true,
+    message: 'Notification supprimée'
+  });
+}));
+
+/**
  * @route   POST /api/users/upload-avatar
  * @desc    Uploader un avatar
  * @access  Private

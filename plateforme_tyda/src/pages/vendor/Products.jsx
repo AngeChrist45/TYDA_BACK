@@ -32,7 +32,12 @@ export default function VendorProducts() {
 
   const { data: productsData, isLoading } = useQuery({
     queryKey: ['vendor-products'],
-    queryFn: vendorApi.getProducts,
+    queryFn: async () => {
+      const response = await vendorApi.getProducts();
+      console.log('🛍️ Produits vendeur response:', response);
+      console.log('🛍️ response.data:', response.data);
+      return response.data; // { success: true, data: { products: [...] } }
+    },
     enabled: isApprovedVendor, // Ne charger que si vendeur approuvé
   });
 
@@ -87,6 +92,8 @@ export default function VendorProducts() {
   const products = productsData?.data?.products || [];
   const categories = categoriesData?.data?.data?.categories || [];
 
+  console.log('📦 productsData:', productsData);
+  console.log('📋 products array:', products);
   console.log('📦 Categories Data:', categoriesData);
   console.log('📋 Categories Array:', categories);
 
