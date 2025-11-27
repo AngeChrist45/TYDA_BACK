@@ -52,7 +52,11 @@ router.post('/items', auth, asyncHandler(async (req, res) => {
   if (existingItem) {
     existingItem.quantity += quantity;
   } else {
-    cart.items.push({ product: productId, quantity });
+    cart.items.push({ 
+      product: productId, 
+      quantity,
+      price: product.price // Ajouter le prix du produit
+    });
   }
 
   await cart.save();
