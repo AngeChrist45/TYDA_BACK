@@ -7,11 +7,12 @@ const Product = require('../models/Product');
 
 // Get user cart
 router.get('/', auth, asyncHandler(async (req, res) => {
-  let cart = await Cart.findOne({ user: req.user._id })
+  const userId = req.user.userId || req.user._id;
+  let cart = await Cart.findOne({ user: userId })
     .populate('items.product');
 
   if (!cart) {
-    cart = await Cart.create({ user: req.user._id, items: [] });
+    cart = await Cart.create({ user: userId, items: [] });
   }
 
   res.json({ success: true, data: cart });
@@ -26,9 +27,10 @@ router.post('/items', auth, asyncHandler(async (req, res) => {
     return res.status(404).json({ success: false, message: 'Produit non trouvé' });
   }
 
-  let cart = await Cart.findOne({ user: req.user._id });
+  const userId = req.user.userId || req.user._id;
+  let cart = await Cart.findOne({ user: userId });
   if (!cart) {
-    cart = await Cart.create({ user: req.user._id, items: [] });
+    cart = await Cart.create({ user: userId, items: [] });
   }
 
   const existingItem = cart.items.find(item => item.product.toString() === productId);
@@ -49,7 +51,8 @@ router.post('/items', auth, asyncHandler(async (req, res) => {
 router.put('/items/:itemId', auth, asyncHandler(async (req, res) => {
   const { quantity } = req.body;
 
-  const cart = await Cart.findOne({ user: req.user._id });
+  const userId = req.user.userId || req.user._id;
+  const cart = await Cart.findOne({ user: userId });
   if (!cart) {
     return res.status(404).json({ success: false, message: 'Panier non trouvé' });
   }
@@ -68,7 +71,8 @@ router.put('/items/:itemId', auth, asyncHandler(async (req, res) => {
 
 // Remove item from cart
 router.delete('/items/:itemId', auth, asyncHandler(async (req, res) => {
-  const cart = await Cart.findOne({ user: req.user._id });
+  const userId = req.user.userId || req.user._id;
+  const cart = await Cart.findOne({ user: userId });
   if (!cart) {
     return res.status(404).json({ success: false, message: 'Panier non trouvé' });
   }
@@ -82,7 +86,8 @@ router.delete('/items/:itemId', auth, asyncHandler(async (req, res) => {
 
 // Clear cart
 router.delete('/', auth, asyncHandler(async (req, res) => {
-  const cart = await Cart.findOne({ user: req.user._id });
+  const userId = req.user.userId || req.user._id;
+  const cart = await Cart.findOne({ user: userId });
   if (cart) {
     cart.items = [];
     await cart.save();
