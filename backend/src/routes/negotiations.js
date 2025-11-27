@@ -9,6 +9,62 @@ const NegotiationBot = require('../services/negotiationBot');
 const router = express.Router();
 
 /**
+ * @route   POST /api/negotiations
+ * @desc    Créer une nouvelle négociation (simple)
+ * @access  Private
+ */
+router.post('/', auth, asyncHandler(async (req, res) => {
+  const { productId, proposedPrice } = req.body;
+
+  if (!productId || !proposedPrice) {
+    return res.status(400).json({
+      success: false,
+      message: 'ID produit et prix proposé requis'
+    });
+  }
+
+  const product = await Product.findById(productId);
+  
+  if (!product) {
+    return res.status(404).json({
+      success: false,
+      message: 'Produit introuvable'
+    });
+  }
+
+  if (!product.negotiation?.enabled) {
+    return res.status(400).json({
+      success: false,
+      message: 'Ce produit n\'est pas négociable'
+    });
+  }
+
+  const userId = req.user.userId || req.user._id;
+
+  const negotiation = await Negotiation.create({
+    product: productId,
+    customer: userId,
+    vendor: product.vendor,
+    originalPrice: product.price,
+    proposedPrice: parseFloat(proposedPrice),
+    currentPrice: product.price,
+    status: 'pending',
+    messages: [{
+      sender: userId,
+      senderType: 'customer',
+      content: `Je propose ${proposedPrice} FCFA pour ce produit`,
+      timestamp: new Date()
+    }]
+  });
+
+  res.status(201).json({
+    success: true,
+    message: 'Négociation créée avec succès',
+    data: negotiation
+  });
+}));
+
+/**
  * @route   POST /api/negotiations/start
  * @desc    Démarrer une nouvelle négociation
  * @access  Private (Client)
