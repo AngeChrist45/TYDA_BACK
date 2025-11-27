@@ -22,6 +22,20 @@ router.get('/', auth, asyncHandler(async (req, res) => {
 router.post('/items', auth, asyncHandler(async (req, res) => {
   const { productId, quantity = 1 } = req.body;
 
+  console.log('📦 Cart add request:', { 
+    productId, 
+    quantity, 
+    userId: req.user.userId || req.user._id,
+    body: req.body 
+  });
+
+  if (!productId) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'productId est requis' 
+    });
+  }
+
   const product = await Product.findById(productId);
   if (!product) {
     return res.status(404).json({ success: false, message: 'Produit non trouvé' });
