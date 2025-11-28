@@ -43,13 +43,15 @@ router.post('/', auth, asyncHandler(async (req, res) => {
   }
 
   const userId = req.user.userId || req.user._id;
+  const sessionId = `session-${userId}-${Date.now()}`;
 
   console.log('✅ Création négociation:', { 
     product: productId, 
     customer: userId, 
     vendor: product.vendor,
     originalPrice: product.price,
-    proposedPrice: parseFloat(proposedPrice)
+    proposedPrice: parseFloat(proposedPrice),
+    sessionId
   });
 
   const negotiation = await Negotiation.create({
@@ -59,6 +61,7 @@ router.post('/', auth, asyncHandler(async (req, res) => {
     originalPrice: product.price,
     proposedPrice: parseFloat(proposedPrice),
     status: 'en_cours',
+    sessionId: sessionId,
     messages: [{
       sender: 'customer',
       message: `Je propose ${proposedPrice} FCFA pour ce produit`,
