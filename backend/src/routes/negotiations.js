@@ -16,7 +16,10 @@ const router = express.Router();
 router.post('/', auth, asyncHandler(async (req, res) => {
   const { productId, proposedPrice } = req.body;
 
-  if (!productId || !proposedPrice) {
+  console.log('📨 Réception négociation:', { productId, proposedPrice, body: req.body });
+
+  if (!productId || !proposedPrice || proposedPrice <= 0) {
+    console.log('❌ Validation échouée:', { productId, proposedPrice });
     return res.status(400).json({
       success: false,
       message: 'ID produit et prix proposé requis'
