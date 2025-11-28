@@ -72,6 +72,28 @@ router.post('/', auth, asyncHandler(async (req, res) => {
 
   console.log('✅ Négociation créée avec succès:', negotiation._id);
 
+  // Déclencher la réponse automatique du bot
+  try {
+    const populatedNegotiation = await Negotiation.findById(negotiation._id)
+      .populate('product')
+      .populate('customer')
+      .populate('vendor');
+    
+    const NegotiationBot = require('../services/negotiationBot');
+    const bot = new NegotiationBot(req.app.get('io'));
+    
+    const botResponse = await bot.processPriceProposal(populatedNegotiation, parseFloat(proposedPrice));
+    console.log('🤖 Réponse du bot:', botResponse);
+    
+    // Ajouter la réponse du bot aux messages
+    if (botResponse && botResponse.message) {
+      await populatedNegotiation.addMessage('bot', botResponse.message, botResponse.counterPrice || null);
+    }
+  } catch (botError) {
+    console.error('❌ Erreur bot:', botError);
+    // On continue même si le bot échoue
+  }
+
   res.status(201).json({
     success: true,
     message: 'Négociation créée avec succès',

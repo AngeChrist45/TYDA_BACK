@@ -57,6 +57,9 @@ const io = new Server(server, {
 // Initialisation du bot de négociation avec Socket.IO
 const negotiationBot = new NegotiationBot(io);
 
+// Rendre io accessible dans les routes
+app.set('io', io);
+
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
