@@ -182,8 +182,21 @@ io.on('connection', (socket) => {
       if (!socket.user) {
         return socket.emit('socket-error', { message: 'Authentification requise' });
       }
+      console.log('📨 Message de négociation reçu:', data);
       const response = await negotiationBot.handleMessage(data);
-      socket.emit('bot-response', response);
+      console.log('🤖 Réponse du bot (Socket.IO):', response);
+      
+      // Émettre à toute la room de négociation
+      if (data.negotiationId) {
+        io.to(`negotiation-${data.negotiationId}`).emit('negotiation-message', {
+          message: response.message,
+          proposedPrice: response.suggestedPrice || response.counterPrice || response.finalPrice,
+          status: response.status,
+          type: response.type
+        });
+      } else {
+        socket.emit('bot-response', response);
+      }
     } catch (error) {
       console.error('Erreur bot négociation:', error);
       socket.emit('bot-error', { message: 'Erreur lors de la négociation' });

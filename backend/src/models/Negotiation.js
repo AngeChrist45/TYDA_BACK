@@ -53,7 +53,7 @@ const negotiationSchema = new mongoose.Schema({
   },
   maxAttempts: {
     type: Number,
-    default: 3
+    default: 5
   },
   // Historique des messages avec le bot
   messages: [{

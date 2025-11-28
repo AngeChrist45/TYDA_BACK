@@ -16,24 +16,24 @@ class NegotiationBot {
         "Bonsoir ! {botName} à votre service pour une négociation équitable."
       ],
       priceAccepted: [
-        "Excellent ! J'accepte votre proposition de {price} FCFA. C'est un bon prix !",
-        "Parfait ! {price} FCFA, c'est accepté. Vous avez fait une bonne affaire !",
-        "Super ! Je valide {price} FCFA. Félicitations pour cette négociation !"
+        "Excellent ! J'accepte votre proposition de {price}. C'est un bon prix !",
+        "Parfait ! {price}, c'est accepté. Vous avez fait une bonne affaire !",
+        "Super ! Je valide {price}. Félicitations pour cette négociation !"
       ],
       priceRejected: [
-        "Désolé, {price} FCFA est trop bas. Le prix minimum que je peux accepter est {minPrice} FCFA.",
-        "Ah non, {price} FCFA ne convient pas. Essayez plutôt aux alentours de {minPrice} FCFA.",
-        "Ce prix de {price} FCFA est insuffisant. Que diriez-vous de {minPrice} FCFA ?"
+        "Désolé, {price} est trop bas. Le prix minimum que je peux accepter est {minPrice}.",
+        "Ah non, {price} ne convient pas. Essayez plutôt aux alentours de {minPrice}.",
+        "Ce prix de {price} est insuffisant. Que diriez-vous de {minPrice} ?"
       ],
       counterOffer: [
-        "Hmm, {price} FCFA est un peu juste. Je vous propose {counterPrice} FCFA, qu'en pensez-vous ?",
-        "Votre offre de {price} FCFA est intéressante, mais je peux descendre à {counterPrice} FCFA maximum.",
-        "Pour {price} FCFA, c'est compliqué. Rencontrons-nous à {counterPrice} FCFA ?"
+        "Hmm, {price} est un peu juste. Je vous propose {counterPrice}, qu'en pensez-vous ?",
+        "Votre offre de {price} est intéressante, mais je peux descendre à {counterPrice} maximum.",
+        "Pour {price}, c'est compliqué. Rencontrons-nous à {counterPrice} ?"
       ],
       finalOffer: [
-        "C'est ma dernière offre : {price} FCFA. C'est le minimum absolu !",
-        "Bon, je fais un effort final : {price} FCFA. C'est vraiment le dernier prix !",
-        "Exceptionnellement, je descends à {price} FCFA. C'est ma limite !"
+        "C'est ma dernière offre : {price}. C'est le minimum absolu !",
+        "Bon, je fais un effort final : {price}. C'est vraiment le dernier prix !",
+        "Exceptionnellement, je descends à {price}. C'est ma limite !"
       ],
       maxAttemptsReached: [
         "Nous avons épuisé nos tentatives de négociation. Le prix reste à {originalPrice} FCFA.",
