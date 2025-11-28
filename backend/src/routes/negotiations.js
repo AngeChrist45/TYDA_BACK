@@ -44,21 +44,30 @@ router.post('/', auth, asyncHandler(async (req, res) => {
 
   const userId = req.user.userId || req.user._id;
 
+  console.log('✅ Création négociation:', { 
+    product: productId, 
+    customer: userId, 
+    vendor: product.vendor,
+    originalPrice: product.price,
+    proposedPrice: parseFloat(proposedPrice)
+  });
+
   const negotiation = await Negotiation.create({
     product: productId,
     customer: userId,
     vendor: product.vendor,
     originalPrice: product.price,
     proposedPrice: parseFloat(proposedPrice),
-    currentPrice: product.price,
-    status: 'pending',
+    status: 'en_cours',
     messages: [{
-      sender: userId,
-      senderType: 'customer',
-      content: `Je propose ${proposedPrice} FCFA pour ce produit`,
+      sender: 'customer',
+      message: `Je propose ${proposedPrice} FCFA pour ce produit`,
+      proposedPrice: parseFloat(proposedPrice),
       timestamp: new Date()
     }]
   });
+
+  console.log('✅ Négociation créée avec succès:', negotiation._id);
 
   res.status(201).json({
     success: true,
