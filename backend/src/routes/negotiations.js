@@ -73,6 +73,7 @@ router.post('/', auth, asyncHandler(async (req, res) => {
   console.log('✅ Négociation créée avec succès:', negotiation._id);
 
   // Déclencher la réponse automatique du bot
+  let botResponseData = null;
   try {
     const populatedNegotiation = await Negotiation.findById(negotiation._id)
       .populate('product')
@@ -87,7 +88,18 @@ router.post('/', auth, asyncHandler(async (req, res) => {
     
     // Ajouter la réponse du bot aux messages
     if (botResponse && botResponse.message) {
-      await populatedNegotiation.addMessage('bot', botResponse.message, botResponse.counterPrice || null);
+      await populatedNegotiation.addMessage('bot', botResponse.message, botResponse.suggestedPrice || botResponse.counterPrice || null);
+      botResponseData = {
+        message: botResponse.message,
+        proposedPrice: botResponse.suggestedPrice || botResponse.counterPrice,
+        status: botResponse.status,
+        type: botResponse.type
+      };
+      
+      // Émettre l'événement Socket.IO pour notifier le frontend
+      const io = req.app.get('io');
+      io.to(`negotiation-${negotiation._id}`).emit('negotiation-message', botResponseData);
+      console.log('📤 Message envoyé via Socket.IO:', botResponseData);
     }
   } catch (botError) {
     console.error('❌ Erreur bot:', botError);
@@ -97,7 +109,10 @@ router.post('/', auth, asyncHandler(async (req, res) => {
   res.status(201).json({
     success: true,
     message: 'Négociation créée avec succès',
-    data: negotiation
+    data: {
+      negotiation,
+      botResponse: botResponseData
+    }
   });
 }));
 
