@@ -46,9 +46,11 @@ class NegotiationBot {
         "Prix invalide. La fourchette acceptable est {minPrice} - {maxPrice} FCFA."
       ],
       encouragement: [
-        "Allez-y, proposez-moi votre prix ! Je suis ouvert à la négociation.",
-        "N'hésitez pas à négocier ! Quel prix vous semble juste ?",
-        "Faites-moi votre meilleure offre ! Je vous écoute."
+        "C'est un début, mais vous pouvez faire une meilleure offre ! 😊",
+        "Hmm, c'est encore un peu bas. Vous êtes sûr que c'est votre meilleure proposition ?",
+        "On se rapproche, mais il faut encore améliorer un peu. Allez, je sais que vous pouvez faire mieux !",
+        "Intéressant... mais je pense que vous pouvez proposer quelque chose de plus proche de la réalité. Essayez encore !",
+        "Pas mal, mais on est encore loin du compte. Montrez-moi ce que vous avez vraiment en tête !"
       ]
     };
   }
@@ -123,6 +125,9 @@ class NegotiationBot {
         await negotiation.accept(proposedPrice);
         return this.createAcceptanceResponse(negotiation, proposedPrice);
         
+      case 'encourage':
+        return this.createEncouragementResponse(negotiation, proposedPrice);
+        
       case 'reject':
         return this.createRejectionResponse(negotiation, proposedPrice, minPrice);
         
@@ -149,6 +154,7 @@ class NegotiationBot {
     const originalPrice = negotiation.originalPrice;
     const minPrice = product.minNegotiationPrice;
     const maxDiscount = product.negotiation.percentage;
+    const currentAttempt = negotiation.attempts;
     
     // Calculer les seuils de décision
     const discountRequested = ((originalPrice - proposedPrice) / originalPrice) * 100;
@@ -170,6 +176,14 @@ class NegotiationBot {
     }
     
     if (proposedPrice < minPrice) {
+      // 1ère et 2ème tentative : Encourager sans donner de prix
+      if (currentAttempt <= 2) {
+        return { 
+          action: 'encourage',
+          message: this.getRandomResponse('encouragement')
+        };
+      }
+      // 3ème tentative et plus : Donner une indication de prix
       return { 
         action: 'reject',
         message: this.getRandomResponse('priceRejected', { 
@@ -265,6 +279,20 @@ class NegotiationBot {
       savingsPercentage: savingsPercentage,
       negotiationId: negotiation._id,
       canAddToCart: true,
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  /**
+   * Crée une réponse d'encouragement (sans donner de prix)
+   */
+  createEncouragementResponse(negotiation, proposedPrice) {
+    return {
+      type: 'encouragement',
+      status: 'negotiating',
+      message: this.getRandomResponse('encouragement'),
+      negotiationId: negotiation._id,
+      attemptsLeft: negotiation.maxAttempts - negotiation.attempts,
       timestamp: new Date().toISOString()
     };
   }
