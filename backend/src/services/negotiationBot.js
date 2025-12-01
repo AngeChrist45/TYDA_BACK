@@ -131,16 +131,6 @@ class NegotiationBot {
       case 'reject':
         return this.createRejectionResponse(negotiation, proposedPrice, minPrice);
         
-      case 'counter':
-        const counterPrice = strategy.counterPrice;
-        await negotiation.counterOffer(counterPrice, strategy.message);
-        return this.createCounterOfferResponse(negotiation, proposedPrice, counterPrice);
-        
-      case 'final':
-        const finalPrice = strategy.finalPrice;
-        await negotiation.counterOffer(finalPrice, strategy.message);
-        return this.createFinalOfferResponse(negotiation, finalPrice);
-        
       default:
         return this.createErrorResponse('Erreur de stratégie');
     }
@@ -153,33 +143,20 @@ class NegotiationBot {
     const product = negotiation.product;
     const originalPrice = negotiation.originalPrice;
     const minPrice = product.minNegotiationPrice;
-    const maxDiscount = product.negotiation.percentage;
     const currentAttempt = negotiation.attempts;
     
-    // Si le prix proposé est >= au prix original, accepter immédiatement
+    // RÈGLE SIMPLE ET CLAIRE :
+    // 1. Prix proposé >= Prix original → Accepter immédiatement
     if (proposedPrice >= originalPrice) {
       return { action: 'accept' };
     }
     
-    // Calculer les seuils de décision
-    const discountRequested = ((originalPrice - proposedPrice) / originalPrice) * 100;
-    const acceptanceThreshold = maxDiscount * 0.8; // 80% de la remise max
-    const counterOfferThreshold = maxDiscount * 0.6; // 60% de la remise max
-    
-    // Facteurs d'influence
-    const attemptFactor = negotiation.attempts / negotiation.maxAttempts;
-    const timeFactor = this.calculateTimeFactor(negotiation);
-    const productPopularityFactor = this.calculatePopularityFactor(product);
-    
-    // Ajustement dynamique des seuils
-    const adjustedAcceptanceThreshold = acceptanceThreshold * (1 - attemptFactor * 0.2);
-    const adjustedCounterThreshold = counterOfferThreshold * (1 + timeFactor * 0.1);
-    
-    // Décision basée sur les seuils ajustés
-    if (discountRequested <= adjustedAcceptanceThreshold) {
+    // 2. Prix minimum <= Prix proposé < Prix original → Accepter
+    if (proposedPrice >= minPrice) {
       return { action: 'accept' };
     }
     
+    // 3. Prix proposé < Prix minimum → Refuser (avec encouragement les 2 premières fois)
     if (proposedPrice < minPrice) {
       // 1ère et 2ème tentative : Encourager sans donner de prix
       if (currentAttempt <= 2) {
@@ -198,35 +175,8 @@ class NegotiationBot {
       };
     }
     
-    // Dernière tentative = offre finale
-    if (negotiation.attempts >= negotiation.maxAttempts - 1) {
-      const finalPrice = Math.max(minPrice, proposedPrice + (originalPrice - proposedPrice) * 0.3);
-      return {
-        action: 'final',
-        finalPrice: Math.round(finalPrice),
-        message: this.getRandomResponse('finalOffer', { 
-          price: this.formatPrice(Math.round(finalPrice)) 
-        })
-      };
-    }
-    
-    // Contre-offre intelligente
-    const counterPrice = this.calculateCounterOffer(
-      originalPrice, 
-      proposedPrice, 
-      minPrice, 
-      attemptFactor,
-      productPopularityFactor
-    );
-    
-    return {
-      action: 'counter',
-      counterPrice,
-      message: this.getRandomResponse('counterOffer', {
-        price: this.formatPrice(proposedPrice),
-        counterPrice: this.formatPrice(counterPrice)
-      })
-    };
+    // Cas par défaut (ne devrait jamais arriver avec la logique ci-dessus)
+    return { action: 'reject' };
   }
 
   /**
