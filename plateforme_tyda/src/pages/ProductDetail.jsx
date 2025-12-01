@@ -129,7 +129,7 @@ export default function ProductDetail() {
   });
 
   const addNegotiatedToCart = useMutation({
-    mutationFn: () => cartApi.add(id, quantity),
+    mutationFn: () => cartApi.add(id, quantity, acceptedPrice),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cart'] });
       queryClient.refetchQueries({ queryKey: ['cart'] });

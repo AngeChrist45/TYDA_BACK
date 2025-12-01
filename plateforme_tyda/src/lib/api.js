@@ -93,7 +93,13 @@ export const categoriesApi = {
 
 export const cartApi = {
   get: () => api.get('/cart'),
-  add: (productId, quantity) => api.post('/cart/items', { productId, quantity }),
+  add: (productId, quantity, negotiatedPrice = null) => {
+    const data = { productId, quantity };
+    if (negotiatedPrice) {
+      data.negotiatedPrice = negotiatedPrice;
+    }
+    return api.post('/cart/items', data);
+  },
   update: (itemId, quantity) => api.put(`/cart/items/${itemId}`, { quantity }),
   remove: (itemId) => api.delete(`/cart/items/${itemId}`),
   clear: () => api.delete('/cart'),
