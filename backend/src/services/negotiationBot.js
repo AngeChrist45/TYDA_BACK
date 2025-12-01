@@ -102,11 +102,11 @@ class NegotiationBot {
     const originalPrice = negotiation.originalPrice;
     const minPrice = product.minNegotiationPrice;
     
-    // Vérifier si le prix est dans la fourchette acceptable
-    if (proposedPrice < 0 || proposedPrice >= originalPrice) {
+    // Vérifier si le prix est valide (doit être positif)
+    if (proposedPrice < 0) {
       return this.createResponse(
         'invalidPrice',
-        { minPrice, maxPrice: originalPrice - 1 },
+        { minPrice, maxPrice: originalPrice },
         negotiation
       );
     }
