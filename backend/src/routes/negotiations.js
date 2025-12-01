@@ -88,10 +88,11 @@ router.post('/', auth, asyncHandler(async (req, res) => {
     
     // Ajouter la réponse du bot aux messages
     if (botResponse && botResponse.message) {
-      await populatedNegotiation.addMessage('bot', botResponse.message, botResponse.suggestedPrice || botResponse.counterPrice || null);
+      await populatedNegotiation.addMessage('bot', botResponse.message, botResponse.suggestedPrice || botResponse.counterPrice || botResponse.finalPrice || null);
       botResponseData = {
         message: botResponse.message,
-        proposedPrice: botResponse.suggestedPrice || botResponse.counterPrice,
+        proposedPrice: botResponse.suggestedPrice || botResponse.counterPrice || botResponse.finalPrice,
+        finalPrice: botResponse.finalPrice,
         status: botResponse.status,
         type: botResponse.type
       };
