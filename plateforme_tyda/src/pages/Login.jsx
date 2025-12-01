@@ -33,67 +33,68 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center gradient-card px-4 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-500 via-orange-400 to-green-500 px-4 relative overflow-hidden">
       {/* Decorative elements */}
-      <div className="absolute top-0 left-0 w-64 h-64 gradient-primary rounded-full blur-3xl opacity-20 -translate-x-1/2 -translate-y-1/2"></div>
-      <div className="absolute bottom-0 right-0 w-64 h-64 gradient-secondary rounded-full blur-3xl opacity-20 translate-x-1/2 translate-y-1/2"></div>
+      <div className="absolute top-0 left-0 w-96 h-96 bg-white/10 rounded-full blur-3xl animate-pulse"></div>
+      <div className="absolute bottom-0 right-0 w-96 h-96 bg-green-400/20 rounded-full blur-3xl animate-pulse" style={{animationDelay: '1s'}}></div>
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-white/5 rounded-full blur-3xl"></div>
 
       <div className="w-full max-w-md relative z-10">
-        <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors">
-          <ArrowLeft className="h-4 w-4" />
+        <Link to="/" className="inline-flex items-center gap-2 text-white hover:text-white/80 mb-8 transition-colors font-semibold backdrop-blur-sm bg-white/10 px-4 py-2 rounded-xl border border-white/20">
+          <ArrowLeft className="h-5 w-5" />
           Retour à l'accueil
         </Link>
 
-        <div className="bg-card border border-border rounded-2xl shadow-2xl p-8 backdrop-blur-sm">
+        <div className="bg-white rounded-3xl shadow-2xl p-10 backdrop-blur-sm border-2 border-orange-200">
           {/* Logo & Title */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl gradient-hero mb-4 shadow-lg">
-              <span className="text-2xl font-bold text-white">T</span>
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-orange-500 to-green-500 mb-6 shadow-xl">
+              <span className="text-3xl font-black text-white">T</span>
             </div>
-            <h1 className="text-3xl font-bold mb-2">Connexion</h1>
-            <p className="text-muted-foreground">Accédez à votre compte TYDA</p>
+            <h1 className="text-4xl font-black mb-3 bg-gradient-to-r from-orange-600 to-green-600 bg-clip-text text-transparent">Bienvenue !</h1>
+            <p className="text-gray-600 text-lg font-medium">Accédez à votre compte TYDA</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-6">
             {/* Phone Input */}
             <div>
-              <label className="block text-sm font-medium mb-2">Numéro de téléphone</label>
+              <label className="block text-sm font-black mb-3 text-gray-800">Numéro de téléphone</label>
               <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-6 w-6 text-orange-400" />
                 <input
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="+225 XX XX XX XX XX"
-                  className="w-full pl-11 pr-4 py-3 bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                  className="w-full pl-14 pr-5 py-4 bg-gradient-to-r from-orange-50 to-green-50 border-2 border-orange-200 rounded-2xl focus:outline-none focus:border-orange-400 transition-all font-semibold text-gray-700"
                   required
                 />
               </div>
-              <p className="text-xs text-muted-foreground mt-1">Format: +225XXXXXXXXXX</p>
+              <p className="text-xs text-gray-500 mt-2 font-semibold">Format: +225XXXXXXXXXX</p>
             </div>
 
             {/* PIN Input */}
             <div>
-              <label className="block text-sm font-medium mb-2">Code PIN</label>
+              <label className="block text-sm font-black mb-3 text-gray-800">Code PIN</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-6 w-6 text-orange-400" />
                 <input
                   type="password"
                   value={pin}
                   onChange={(e) => setPin(e.target.value)}
                   placeholder="••••"
                   maxLength="4"
-                  className="w-full pl-11 pr-4 py-3 bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-center text-2xl tracking-widest"
+                  className="w-full pl-14 pr-5 py-4 bg-gradient-to-r from-orange-50 to-green-50 border-2 border-orange-200 rounded-2xl focus:outline-none focus:border-orange-400 transition-all text-center text-3xl tracking-widest font-black"
                   required
                 />
               </div>
-              <p className="text-xs text-muted-foreground mt-1">Votre code PIN à 4 chiffres</p>
+              <p className="text-xs text-gray-500 mt-2 font-semibold">Votre code PIN à 4 chiffres</p>
             </div>
 
             {/* Error Message */}
             {error && (
-              <div className="p-4 bg-destructive/10 border border-destructive/30 text-destructive rounded-lg text-sm flex items-start gap-2">
-                <span className="text-lg">⚠️</span>
+              <div className="p-4 bg-red-50 border-2 border-red-200 text-red-600 rounded-2xl text-sm flex items-start gap-3 font-semibold">
+                <span className="text-2xl">⚠️</span>
                 <span>{error}</span>
               </div>
             )}
@@ -102,11 +103,11 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading || pin.length !== 4}
-              className="w-full py-3 gradient-primary text-white rounded-lg font-semibold hover:opacity-90 disabled:opacity-50 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+              className="w-full py-4 bg-gradient-to-r from-orange-500 to-green-500 text-white rounded-2xl font-black text-lg hover:shadow-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 hover:scale-105"
             >
               {loading ? (
                 <>
-                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <Loader2 className="h-6 w-6 animate-spin" />
                   Connexion en cours...
                 </>
               ) : (
@@ -116,19 +117,19 @@ export default function Login() {
           </form>
 
           {/* Register Link */}
-          <div className="mt-6 pt-6 border-t border-border text-center">
-            <p className="text-sm text-muted-foreground">
-              Pas encore de compte ?{' '}
-              <Link to="/register" className="text-primary hover:text-primary/90 font-semibold transition-colors">
-                Inscrivez-vous gratuitement
+          <div className="mt-8 text-center pt-6 border-t-2 border-orange-100">
+            <p className="text-gray-600 font-semibold">
+              Vous n'avez pas de compte ?{' '}
+              <Link to="/register" className="text-orange-600 hover:text-orange-700 font-black hover:underline">
+                S'inscrire
               </Link>
             </p>
           </div>
         </div>
 
         {/* Additional Info */}
-        <div className="mt-6 text-center text-sm text-muted-foreground">
-          <p>🇨🇮 Marketplace 100% ivoirienne</p>
+        <div className="mt-6 text-center text-white/90 text-sm backdrop-blur-sm bg-white/10 rounded-2xl p-4 border border-white/20">
+          <p className="font-semibold">🔒 Connexion sécurisée SSL</p>
         </div>
       </div>
     </div>

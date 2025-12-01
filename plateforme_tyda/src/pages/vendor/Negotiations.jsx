@@ -1,12 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { vendorApi } from '../../lib/api';
-import { Check, X, Loader2, MessageSquare } from 'lucide-react';
+import { Check, X, Loader2, MessageSquare, ArrowLeft, Clock, CheckCircle, XCircle, TrendingDown } from 'lucide-react';
 import { useState } from 'react';
 
 export default function VendorNegotiations() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [selectedNegotiation, setSelectedNegotiation] = useState(null);
-  const [counterOffer, setCounterOffer] = useState('');
 
   const { data: negotiationsData, isLoading } = useQuery({
     queryKey: ['vendor-negotiations'],
@@ -18,16 +18,13 @@ export default function VendorNegotiations() {
       vendorApi.respondToNegotiation(id, action, counterOffer),
     onSuccess: () => {
       queryClient.invalidateQueries(['vendor-negotiations']);
-      setSelectedNegotiation(null);
-      setCounterOffer('');
-      alert('Réponse envoyée!');
     },
   });
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
       </div>
     );
   }
@@ -38,18 +35,35 @@ export default function VendorNegotiations() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold mb-2">Négociations</h1>
-        <p className="text-muted-foreground">{pending.length} en attente</p>
+      {/* Header */}
+      <div className="mb-6">
+        <button
+          onClick={() => navigate('/vendor-dashboard')}
+          className="flex items-center gap-2 text-gray-600 hover:text-orange-600 transition-colors mb-4"
+        >
+          <ArrowLeft className="h-5 w-5" />
+          <span>Retour au dashboard</span>
+        </button>
+
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Négociations</h1>
+          <p className="text-gray-600">{pending.length} négociation(s) en attente</p>
+        </div>
       </div>
 
       {/* Pending negotiations */}
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold">En attente de réponse</h2>
+        <h2 className="text-xl font-semibold flex items-center gap-2">
+          <Clock className="h-5 w-5 text-orange-600" />
+          En attente de réponse
+        </h2>
         {pending.length === 0 ? (
-          <div className="border rounded-lg p-8 text-center text-muted-foreground">
-            <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>Aucune négociation en attente</p>
+          <div className="bg-white border-2 border-dashed rounded-lg p-12 text-center">
+            <MessageSquare className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+            <p className="text-gray-500 mb-2">Aucune négociation en attente</p>
+            <p className="text-sm text-gray-400">
+              Les clients peuvent négocier sur vos produits activés
+            </p>
           </div>
         ) : (
           pending.map((negotiation) => (
@@ -63,6 +77,7 @@ export default function VendorNegotiations() {
                   counterOffer: offer,
                 });
               }}
+              isPending={respondToNegotiation.isPending}
             />
           ))
         )}
@@ -71,7 +86,10 @@ export default function VendorNegotiations() {
       {/* Previous negotiations */}
       {responded.length > 0 && (
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold">Historique</h2>
+          <h2 className="text-xl font-semibold flex items-center gap-2">
+            <CheckCircle className="h-5 w-5 text-green-600" />
+            Historique
+          </h2>
           {responded.map((negotiation) => (
             <NegotiationCard key={negotiation._id} negotiation={negotiation} readonly />
           ))}
@@ -81,114 +99,126 @@ export default function VendorNegotiations() {
   );
 }
 
-function NegotiationCard({ negotiation, onRespond, readonly }) {
+function NegotiationCard({ negotiation, onRespond, readonly, isPending }) {
   const [showCounter, setShowCounter] = useState(false);
   const [counterValue, setCounterValue] = useState('');
 
-  const statusColors = {
-    pending: 'bg-yellow-500/10 text-yellow-600',
-    accepted: 'bg-secondary/10 text-secondary',
-    rejected: 'bg-destructive/10 text-destructive',
-    countered: 'bg-primary/10 text-primary',
+  const statusBadges = {
+    pending: { icon: Clock, text: 'En attente', class: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
+    accepted: { icon: CheckCircle, text: 'Accepté', class: 'bg-green-100 text-green-800 border-green-300' },
+    rejected: { icon: XCircle, text: 'Refusé', class: 'bg-red-100 text-red-800 border-red-300' },
+    countered: { icon: TrendingDown, text: 'Contre-offre', class: 'bg-blue-100 text-blue-800 border-blue-300' }
   };
 
+  const badge = statusBadges[negotiation.status] || statusBadges.pending;
+  const StatusIcon = badge.icon;
+
   return (
-    <div className="border rounded-lg p-6">
+    <div className="bg-white border rounded-lg p-6 hover:shadow-lg transition-all">
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
-          <h3 className="font-semibold mb-1">{negotiation.product?.name}</h3>
-          <p className="text-sm text-muted-foreground">
-            De: {negotiation.customer?.firstName} {negotiation.customer?.lastName}
-          </p>
-        </div>
-        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusColors[negotiation.status]}`}>
-          {negotiation.status === 'pending' ? 'En attente' :
-           negotiation.status === 'accepted' ? 'Accepté' :
-           negotiation.status === 'rejected' ? 'Refusé' : 'Contre-offre'}
-        </span>
-      </div>
-
-      <div className="grid grid-cols-3 gap-4 mb-4">
-        <div>
-          <p className="text-sm text-muted-foreground mb-1">Prix original</p>
-          <p className="font-bold">{negotiation.originalPrice?.toLocaleString()} FCFA</p>
-        </div>
-        <div>
-          <p className="text-sm text-muted-foreground mb-1">Prix proposé</p>
-          <p className="font-bold text-secondary">{negotiation.proposedPrice?.toLocaleString()} FCFA</p>
-        </div>
-        <div>
-          <p className="text-sm text-muted-foreground mb-1">Réduction</p>
-          <p className="font-bold text-destructive">
-            -{(((negotiation.originalPrice - negotiation.proposedPrice) / negotiation.originalPrice) * 100).toFixed(1)}%
+          <div className="flex items-center gap-3 mb-2">
+            <h3 className="font-semibold text-lg">{negotiation.product?.title || 'Produit'}</h3>
+            <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold border ${badge.class}`}>
+              <StatusIcon className="h-3 w-3" />
+              {badge.text}
+            </span>
+          </div>
+          <p className="text-sm text-gray-600">
+            Client: {negotiation.customer?.firstName} {negotiation.customer?.lastName}
           </p>
         </div>
       </div>
 
-      {negotiation.counterOffer && (
-        <div className="p-3 bg-primary/5 border rounded-lg mb-4">
-          <p className="text-sm text-muted-foreground mb-1">Votre contre-offre</p>
-          <p className="font-bold text-primary">{negotiation.counterOffer.toLocaleString()} FCFA</p>
+      <div className="grid grid-cols-3 gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
+        <div>
+          <p className="text-xs text-gray-500 mb-1">Prix initial</p>
+          <p className="font-bold text-gray-900">{negotiation.originalPrice?.toLocaleString()} FCFA</p>
         </div>
-      )}
+        <div>
+          <p className="text-xs text-gray-500 mb-1">Proposition client</p>
+          <p className="font-bold text-orange-600">{negotiation.proposedPrice?.toLocaleString()} FCFA</p>
+        </div>
+        <div>
+          <p className="text-xs text-gray-500 mb-1">Économie demandée</p>
+          <p className="font-bold text-red-600">
+            -{((1 - negotiation.proposedPrice / negotiation.originalPrice) * 100).toFixed(0)}%
+          </p>
+        </div>
+      </div>
 
-      {!readonly && negotiation.status === 'pending' && (
+      {!readonly && (
         <div className="space-y-3">
           {!showCounter ? (
             <div className="flex gap-2">
               <button
-                onClick={() => onRespond('accept')}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-secondary text-white rounded-lg hover:bg-secondary/90"
+                onClick={() => onRespond && onRespond('accept', null)}
+                disabled={isPending}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50"
               >
-                <Check className="h-4 w-4" />
+                <CheckCircle className="h-5 w-5" />
                 Accepter
               </button>
               <button
                 onClick={() => setShowCounter(true)}
-                className="flex-1 px-4 py-2 border-2 border-primary text-primary rounded-lg hover:bg-primary/10"
+                disabled={isPending}
+                className="px-4 py-3 border-2 border-orange-500 text-orange-600 rounded-lg font-semibold hover:bg-orange-50 transition-all disabled:opacity-50"
               >
                 Contre-offre
               </button>
               <button
-                onClick={() => onRespond('reject')}
-                className="px-4 py-2 border-2 border-destructive text-destructive rounded-lg hover:bg-destructive/10"
+                onClick={() => onRespond && onRespond('reject', null)}
+                disabled={isPending}
+                className="px-4 py-3 border-2 border-red-500 text-red-600 rounded-lg hover:bg-red-50 transition-all disabled:opacity-50"
               >
-                <X className="h-4 w-4" />
+                <XCircle className="h-5 w-5" />
               </button>
             </div>
           ) : (
-            <div className="flex gap-2">
-              <input
-                type="number"
-                value={counterValue}
-                onChange={(e) => setCounterValue(e.target.value)}
-                placeholder="Votre contre-offre"
-                className="flex-1 px-4 py-2 border rounded-lg"
-                min={negotiation.proposedPrice}
-                max={negotiation.originalPrice}
-              />
-              <button
-                onClick={() => {
-                  onRespond('counter', parseInt(counterValue));
-                  setShowCounter(false);
-                  setCounterValue('');
-                }}
-                disabled={!counterValue}
-                className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50"
-              >
-                Envoyer
-              </button>
-              <button
-                onClick={() => {
-                  setShowCounter(false);
-                  setCounterValue('');
-                }}
-                className="px-4 py-2 border rounded-lg"
-              >
-                Annuler
-              </button>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">Votre contre-offre (FCFA)</label>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  value={counterValue}
+                  onChange={(e) => setCounterValue(e.target.value)}
+                  placeholder={`Entre ${negotiation.proposedPrice} et ${negotiation.originalPrice}`}
+                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                  min={negotiation.proposedPrice}
+                  max={negotiation.originalPrice}
+                />
+                <button
+                  onClick={() => {
+                    if (counterValue) {
+                      onRespond && onRespond('counter', parseInt(counterValue));
+                      setShowCounter(false);
+                      setCounterValue('');
+                    }
+                  }}
+                  disabled={isPending || !counterValue}
+                  className="px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50"
+                >
+                  Envoyer
+                </button>
+                <button
+                  onClick={() => {
+                    setShowCounter(false);
+                    setCounterValue('');
+                  }}
+                  className="px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all"
+                >
+                  Annuler
+                </button>
+              </div>
             </div>
           )}
+        </div>
+      )}
+
+      {readonly && negotiation.counterOffer && (
+        <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+          <p className="text-xs text-orange-700 font-semibold mb-1">Votre contre-offre :</p>
+          <p className="text-lg font-bold text-orange-900">{negotiation.counterOffer?.toLocaleString()} FCFA</p>
         </div>
       )}
     </div>

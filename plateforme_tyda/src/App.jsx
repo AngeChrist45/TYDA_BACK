@@ -13,8 +13,10 @@ import Profile from './pages/Profile';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import NotFound from './pages/NotFound';
+import Negotiations from './pages/Negotiations';
 import VendorDashboard from './pages/vendor/Dashboard';
 import VendorProducts from './pages/vendor/Products';
+import VendorOrders from './pages/vendor/Orders';
 import VendorNegotiations from './pages/vendor/Negotiations';
 import VendorDashboardNew from './pages/VendorDashboard';
 
@@ -74,15 +76,17 @@ function App() {  return (
             <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
             <Route path="/favorites" element={<ProtectedRoute><Favorites /></ProtectedRoute>} />
             <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
+            <Route path="/negotiations" element={<ProtectedRoute><Negotiations /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/vendor-dashboard" element={<ProtectedRoute><VendorDashboardNew /></ProtectedRoute>} />
             <Route path="/vendor/products" element={<ProtectedRoute><VendorProducts /></ProtectedRoute>} />
+            <Route path="/vendor/orders" element={<ProtectedRoute><VendorOrders /></ProtectedRoute>} />
+            <Route path="/vendor/negotiations" element={<ProtectedRoute><VendorNegotiations /></ProtectedRoute>} />
           </Route>
 
-          {/* Vendor routes (old dashboard - peut être retiré) */}
+          {/* Vendor routes (old dashboard - deprecated) */}
           <Route path="/vendor" element={<VendorRoute><VendorLayout /></VendorRoute>}>
             <Route index element={<VendorDashboard />} />
-            <Route path="negotiations" element={<VendorNegotiations />} />
           </Route>
 
           {/* 404 - Not Found */}

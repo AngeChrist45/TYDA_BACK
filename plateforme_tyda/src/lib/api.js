@@ -15,6 +15,15 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  
+  // Log des requêtes pour debug
+  console.log('🔵 Requête API:', {
+    method: config.method?.toUpperCase(),
+    url: config.url,
+    data: config.data,
+    hasToken: !!token
+  });
+  
   return config;
 });
 
@@ -23,6 +32,18 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    
+    // Log détaillé des erreurs
+    if (error.response) {
+      console.error('❌ Erreur API:', {
+        status: error.response.status,
+        message: error.response.data?.message || error.response.data?.error,
+        code: error.response.data?.code,
+        url: originalRequest.url,
+        method: originalRequest.method,
+        data: originalRequest.data
+      });
+    }
     
     // Si timeout ou erreur réseau et première tentative, réessayer une fois
     if (
@@ -61,9 +82,9 @@ export const authApi = {
 };
 
 export const productsApi = {
-  getAll: (params) => api.get('/products', { params }),
-  getById: (id) => api.get(`/products/${id}`),
-  getNegotiable: () => api.get('/products?negotiable=true'),
+  getAll: (params) => api.get('/client/products', { params }),
+  getById: (id) => api.get(`/client/products/${id}`),
+  getNegotiable: () => api.get('/client/products?negotiable=true'),
 };
 
 export const categoriesApi = {
