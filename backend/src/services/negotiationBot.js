@@ -156,6 +156,11 @@ class NegotiationBot {
     const maxDiscount = product.negotiation.percentage;
     const currentAttempt = negotiation.attempts;
     
+    // Si le prix proposé est >= au prix original, accepter immédiatement
+    if (proposedPrice >= originalPrice) {
+      return { action: 'accept' };
+    }
+    
     // Calculer les seuils de décision
     const discountRequested = ((originalPrice - proposedPrice) / originalPrice) * 100;
     const acceptanceThreshold = maxDiscount * 0.8; // 80% de la remise max
