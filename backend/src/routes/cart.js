@@ -20,11 +20,12 @@ router.get('/', auth, asyncHandler(async (req, res) => {
 
 // Add item to cart
 router.post('/items', auth, asyncHandler(async (req, res) => {
-  const { productId, quantity = 1 } = req.body;
+  const { productId, quantity = 1, negotiatedPrice } = req.body;
 
   console.log('📦 Cart add request:', { 
     productId, 
-    quantity, 
+    quantity,
+    negotiatedPrice,
     userId: req.user.userId || req.user._id,
     body: req.body 
   });
@@ -49,13 +50,20 @@ router.post('/items', auth, asyncHandler(async (req, res) => {
 
   const existingItem = cart.items.find(item => item.product.toString() === productId);
   
+  // Utiliser le prix négocié si fourni, sinon le prix normal
+  const finalPrice = negotiatedPrice || product.price;
+  
   if (existingItem) {
     existingItem.quantity += quantity;
+    // Si un prix négocié est fourni, mettre à jour le prix
+    if (negotiatedPrice) {
+      existingItem.price = negotiatedPrice;
+    }
   } else {
     cart.items.push({ 
       product: productId, 
       quantity,
-      price: product.price // Ajouter le prix du produit
+      price: finalPrice
     });
   }
 
