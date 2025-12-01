@@ -182,10 +182,17 @@ export default function ProductDetail() {
         if (botResponse && botResponse.message) {
           console.log('🤖 Réponse immédiate du bot:', botResponse);
           setBotTyping(false);
+          
+          // Si le bot accepte, mettre à jour les états
+          if (botResponse.status === 'accepted') {
+            setNegotiationAccepted(true);
+            setAcceptedPrice(botResponse.proposedPrice || botResponse.finalPrice);
+          }
+          
           setMessages(prev => [...prev, {
             from: 'bot',
             text: botResponse.message,
-            proposedPrice: botResponse.proposedPrice,
+            proposedPrice: botResponse.proposedPrice || botResponse.finalPrice,
             timestamp: new Date(),
             accepted: botResponse.status === 'accepted'
           }]);
