@@ -41,16 +41,34 @@ const server = createServer(app);
 // Configuration Socket.IO pour le bot de négociation en temps réel
 const io = new Server(server, {
   cors: {
-    origin: [
-      process.env.FRONTEND_WEB_URL || 'http://localhost:3000',
-      process.env.FRONTEND_MOBILE_URL || 'http://localhost:19006',
-      'http://localhost:5173', // Vite dev server
-      'http://localhost:5174', // Vite dev server (alternate port)
-      'http://localhost:8080', // Backoffice
-      'http://localhost:4173', // Vite preview
-    ],
-  
-    methods: ['GET', 'POST']
+    origin: function (origin, callback) {
+      // Autoriser les requêtes sans origine
+      if (!origin) return callback(null, true);
+      
+      // En développement, autoriser localhost et IP locales
+      if (process.env.NODE_ENV !== 'production') {
+        if (origin.includes('localhost') || origin.match(/^http:\/\/192\.168\.\d+\.\d+/)) {
+          return callback(null, true);
+        }
+      }
+      
+      const allowedOrigins = [
+        process.env.FRONTEND_WEB_URL || 'http://localhost:3000',
+        process.env.FRONTEND_MOBILE_URL || 'http://localhost:19006',
+        'http://localhost:5173',
+        'http://localhost:5174',
+        'http://localhost:8080',
+        'http://localhost:4173',
+      ];
+      
+      if (allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        callback(null, true); // Autoriser pour dev
+      }
+    },
+    methods: ['GET', 'POST'],
+    credentials: true
   }
 });
 
@@ -73,20 +91,40 @@ app.use(morgan('combined')); // Logging des requêtes
 app.use(limiter); // Rate limiting
 
 // Configuration CORS
-app.use(cors({
-  origin: [
-    process.env.FRONTEND_WEB_URL || 'http://localhost:3000',
-    process.env.FRONTEND_MOBILE_URL || 'http://localhost:19006',
-    'http://localhost:5173', // Vite dev server (frontend)
-    'http://localhost:5174', // Vite dev server (alternate port)
-    'http://localhost:8080', // Backoffice admin
-    'http://localhost:4173', // Vite preview
-  ],
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Autoriser les requêtes sans origine (Postman, mobile apps, etc.)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = [
+      process.env.FRONTEND_WEB_URL || 'http://localhost:3000',
+      process.env.FRONTEND_MOBILE_URL || 'http://localhost:19006',
+      'http://localhost:5173', // Vite dev server (frontend)
+      'http://localhost:5174', // Vite dev server (alternate port)
+      'http://localhost:8080', // Backoffice admin
+      'http://localhost:4173', // Vite preview
+    ];
+    
+    // En développement, autoriser toutes les origines localhost et IP locales
+    if (process.env.NODE_ENV !== 'production') {
+      if (origin.includes('localhost') || origin.match(/^http:\/\/192\.168\.\d+\.\d+/)) {
+        return callback(null, true);
+      }
+    }
+    
+    if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+      callback(null, true);
+    } else {
+      callback(new Error('Non autorisé par CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   optionsSuccessStatus: 200
-}));
+};
+
+app.use(cors(corsOptions));
 
 // Trust proxy pour Render
 app.set('trust proxy', 1);
