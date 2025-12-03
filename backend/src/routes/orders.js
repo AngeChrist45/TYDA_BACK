@@ -286,12 +286,24 @@ router.post('/checkout', [
   auth,
   authorize('client', 'vendeur')
 ], asyncHandler(async (req, res) => {
+  console.log('📦 Checkout request body:', JSON.stringify(req.body, null, 2));
+  
   const { shippingAddress, paymentMethod, notes } = req.body;
 
   if (!shippingAddress || !paymentMethod) {
+    console.log('❌ Missing shippingAddress or paymentMethod');
     return res.status(400).json({
       success: false,
       message: 'Adresse de livraison et méthode de paiement requises'
+    });
+  }
+
+  // Validation détaillée de l'adresse de livraison
+  if (!shippingAddress.address || !shippingAddress.city || !shippingAddress.phone) {
+    console.log('❌ Incomplete shippingAddress:', shippingAddress);
+    return res.status(400).json({
+      success: false,
+      message: 'Adresse complète requise (adresse, ville et téléphone)'
     });
   }
 
