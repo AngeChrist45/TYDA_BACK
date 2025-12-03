@@ -112,7 +112,7 @@ export const favoritesApi = {
 };
 
 export const ordersApi = {
-  create: (data) => api.post('/orders', data),
+  create: (data) => api.post('/orders/checkout', data),
   getAll: () => api.get('/orders'),
   getById: (id) => api.get(`/orders/${id}`),
 };

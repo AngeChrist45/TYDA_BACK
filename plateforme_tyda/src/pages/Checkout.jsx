@@ -31,17 +31,12 @@ export default function Checkout() {
   const createOrder = useMutation({
     mutationFn: async () => {
       const orderData = {
-        items: items.map(item => ({
-          product: item.product._id,
-          quantity: item.quantity,
-          price: item.price
-        })),
         shippingAddress: {
           address: shippingInfo.address,
           city: shippingInfo.city,
           phone: shippingInfo.phone
         },
-        totalAmount: total,
+        paymentMethod: 'cash_on_delivery', // Paiement à la livraison par défaut
         notes: shippingInfo.notes
       };
       return ordersApi.create(orderData);
