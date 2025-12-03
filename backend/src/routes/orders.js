@@ -65,7 +65,7 @@ router.get('/cart', auth, asyncHandler(async (req, res) => {
  */
 router.post('/cart/add', [
   auth,
-  authorize('client')
+  authorize('client', 'vendeur')
 ], asyncHandler(async (req, res) => {
   const { productId, quantity = 1, negotiationId } = req.body;
 
@@ -192,7 +192,7 @@ router.post('/cart/add', [
  */
 router.put('/cart/update', [
   auth,
-  authorize('client')
+  authorize('client', 'vendeur')
 ], asyncHandler(async (req, res) => {
   const { productId, quantity } = req.body;
 
@@ -263,7 +263,7 @@ router.put('/cart/update', [
  */
 router.delete('/cart/clear', [
   auth,
-  authorize('client')
+  authorize('client', 'vendeur')
 ], asyncHandler(async (req, res) => {
   await Cart.findOneAndUpdate(
     { user: req.user.userId },
@@ -284,7 +284,7 @@ router.delete('/cart/clear', [
  */
 router.post('/checkout', [
   auth,
-  authorize('client')
+  authorize('client', 'vendeur')
 ], asyncHandler(async (req, res) => {
   const { shippingAddress, paymentMethod, notes } = req.body;
 
