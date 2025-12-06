@@ -299,11 +299,12 @@ router.post('/checkout', [
   }
 
   // Validation détaillée de l'adresse de livraison
-  if (!shippingAddress.address || !shippingAddress.city || !shippingAddress.phone) {
+  if (!shippingAddress.firstName || !shippingAddress.lastName || !shippingAddress.phone || 
+      !shippingAddress.street || !shippingAddress.city || !shippingAddress.region) {
     console.log('❌ Incomplete shippingAddress:', shippingAddress);
     return res.status(400).json({
       success: false,
-      message: 'Adresse complète requise (adresse, ville et téléphone)'
+      message: 'Adresse complète requise (prénom, nom, téléphone, rue, ville et région)'
     });
   }
 
