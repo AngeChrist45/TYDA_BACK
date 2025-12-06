@@ -7,9 +7,12 @@ export default function Checkout() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [shippingInfo, setShippingInfo] = useState({
-    address: '',
-    city: '',
+    firstName: '',
+    lastName: '',
     phone: '',
+    street: '',
+    city: '',
+    region: '',
     notes: ''
   });
 
@@ -32,13 +35,17 @@ export default function Checkout() {
     mutationFn: async () => {
       const orderData = {
         shippingAddress: {
-          address: shippingInfo.address,
+          firstName: shippingInfo.firstName,
+          lastName: shippingInfo.lastName,
+          phone: shippingInfo.phone,
+          street: shippingInfo.street,
           city: shippingInfo.city,
-          phone: shippingInfo.phone
+          region: shippingInfo.region
         },
         paymentMethod: 'cash_on_delivery', // Paiement à la livraison par défaut
-        notes: shippingInfo.notes
+        notes: shippingInfo.notes || ''
       };
+      console.log('📦 Sending order data:', orderData);
       return ordersApi.create(orderData);
     },
     onSuccess: () => {
@@ -49,14 +56,16 @@ export default function Checkout() {
     },
     onError: (error) => {
       console.error('Erreur création commande:', error);
-      alert('❌ Erreur lors de la création de la commande');
-    }
+      console.error('Erreur détails:', error.response?.data);
+      alert(`❌ Erreur: ${error.response?.data?.message || error.message}`);
+    },
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    if (!shippingInfo.address || !shippingInfo.city || !shippingInfo.phone) {
+    if (!shippingInfo.firstName || !shippingInfo.lastName || !shippingInfo.phone || 
+        !shippingInfo.street || !shippingInfo.city || !shippingInfo.region) {
       alert('Veuillez remplir tous les champs obligatoires');
       return;
     }
@@ -107,32 +116,34 @@ export default function Checkout() {
             <h2 className="text-xl font-bold text-gray-900 mb-6">Informations de livraison</h2>
             
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Adresse de livraison *
-                </label>
-                <textarea
-                  value={shippingInfo.address}
-                  onChange={(e) => setShippingInfo({...shippingInfo, address: e.target.value})}
-                  placeholder="Entrez votre adresse complète"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FF6B35]"
-                  rows="3"
-                  required
-                />
-              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Prénom *
+                  </label>
+                  <input
+                    type="text"
+                    value={shippingInfo.firstName}
+                    onChange={(e) => setShippingInfo({...shippingInfo, firstName: e.target.value})}
+                    placeholder="Votre prénom"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FF6B35]"
+                    required
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Ville *
-                </label>
-                <input
-                  type="text"
-                  value={shippingInfo.city}
-                  onChange={(e) => setShippingInfo({...shippingInfo, city: e.target.value})}
-                  placeholder="Abidjan, Yamoussoukro, etc."
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FF6B35]"
-                  required
-                />
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Nom *
+                  </label>
+                  <input
+                    type="text"
+                    value={shippingInfo.lastName}
+                    onChange={(e) => setShippingInfo({...shippingInfo, lastName: e.target.value})}
+                    placeholder="Votre nom"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FF6B35]"
+                    required
+                  />
+                </div>
               </div>
 
               <div>
@@ -147,6 +158,50 @@ export default function Checkout() {
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FF6B35]"
                   required
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Rue / Adresse *
+                </label>
+                <textarea
+                  value={shippingInfo.street}
+                  onChange={(e) => setShippingInfo({...shippingInfo, street: e.target.value})}
+                  placeholder="Numéro, rue, quartier..."
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FF6B35]"
+                  rows="2"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Ville *
+                  </label>
+                  <input
+                    type="text"
+                    value={shippingInfo.city}
+                    onChange={(e) => setShippingInfo({...shippingInfo, city: e.target.value})}
+                    placeholder="Abidjan, Yamoussoukro..."
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FF6B35]"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Région / Commune *
+                  </label>
+                  <input
+                    type="text"
+                    value={shippingInfo.region}
+                    onChange={(e) => setShippingInfo({...shippingInfo, region: e.target.value})}
+                    placeholder="Cocody, Plateau, Abobo..."
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FF6B35]"
+                    required
+                  />
+                </div>
               </div>
 
               <div>
