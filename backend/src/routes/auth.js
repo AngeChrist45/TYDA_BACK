@@ -232,13 +232,14 @@ router.post('/set-pin', [validateRequest(setPinValidation)], async (req, res) =>
       {
         userId: user._id,
         phone: user.phone,
-        role: user.role
+        roles: user.roles || ['client'],
+        role: user.roles && user.roles[0] || 'client' // Rétrocompatibilité
       },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
 
-    console.log('[AUTH] PIN défini et compte activé:', { phone, role: user.role });
+    console.log('[AUTH] PIN défini et compte activé:', { phone, roles: user.roles });
 
     res.json({
       success: true,
@@ -329,13 +330,14 @@ router.post('/login', [loginLimiter, validateRequest(loginValidation)], async (r
       {
         userId: user._id,
         phone: user.phone,
-        role: user.role
+        roles: user.roles || ['client'],
+        role: user.roles && user.roles[0] || 'client' // Rétrocompatibilité
       },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
 
-    console.log('[AUTH] Connexion réussie:', { phone, role: user.role });
+    console.log('[AUTH] Connexion réussie:', { phone, roles: user.roles });
 
     res.json({
       success: true,

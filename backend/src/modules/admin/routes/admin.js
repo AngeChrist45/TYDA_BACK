@@ -134,8 +134,14 @@ router.put('/vendors/:id/approve', [
       });
     }
 
-    // Changer le rôle de client à vendeur
-    user.role = 'vendeur';
+    // Ajouter le rôle vendeur (sans enlever le rôle client)
+    if (!user.roles) {
+      user.roles = ['client']; // Assurer que client existe
+    }
+    if (!user.roles.includes('vendeur')) {
+      user.roles.push('vendeur');
+    }
+    
     user.vendorInfo.validationStatus = 'approved';
     user.vendorInfo.validatedAt = new Date();
     user.vendorInfo.validatedBy = req.user.userId;
@@ -156,21 +162,26 @@ router.put('/vendors/:id/approve', [
 
     await user.save();
 
-    // Générer un nouveau token avec le rôle vendeur
+    // Générer un nouveau token avec les rôles multiples
     const newToken = jwt.sign(
-      { userId: user._id, role: 'vendeur', phone: user.phone },
+      { 
+        userId: user._id, 
+        roles: user.roles,
+        role: user.roles[0], // Rétrocompatibilité
+        phone: user.phone 
+      },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '30d' }
     );
 
-    console.log('[ADMIN] Vendeur approuvé:', { userId: user._id, businessName: user.vendorInfo.businessName });
+    console.log('[ADMIN] Vendeur approuvé:', { userId: user._id, businessName: user.vendorInfo.businessName, roles: user.roles });
 
     res.json({
       success: true,
       message: 'Vendeur approuvé avec succès',
       data: {
         userId: user._id,
-        role: user.role,
+        roles: user.roles,
         validationStatus: user.vendorInfo.validationStatus,
         validatedAt: user.vendorInfo.validatedAt,
         newToken // Nouveau token avec rôle vendeur

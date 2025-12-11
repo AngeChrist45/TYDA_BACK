@@ -44,7 +44,8 @@ const auth = async (req, res, next) => {
 
     req.user = {
       userId: decoded.userId,
-      role: decoded.role,
+      roles: user.roles || ['client'], // Support des rôles multiples
+      role: user.roles && user.roles[0] || 'client', // Rétrocompatibilité
       userDoc: user
     };
 
@@ -87,7 +88,11 @@ const authorize = (...roles) => {
       });
     }
 
-    if (!roles.includes(req.user.role)) {
+    // Support des rôles multiples
+    const userRoles = req.user.roles || [req.user.role];
+    const hasRequiredRole = roles.some(role => userRoles.includes(role));
+
+    if (!hasRequiredRole) {
       return res.status(403).json({
         success: false,
         error: 'Accès refusé',
@@ -101,7 +106,17 @@ const authorize = (...roles) => {
 
 const requireApprovedVendor = async (req, res, next) => {
   try {
-    if (!req.user || req.user.role !== 'vendeur') {
+    if (!req.user) {
+      return res.status(403).json({
+        success: false,
+        error: 'Authentification requise',
+        code: 'AUTHENTICATION_REQUIRED'
+      });
+    }
+
+    // Vérifier si l'utilisateur a le rôle vendeur
+    const userRoles = req.user.roles || [req.user.role];
+    if (!userRoles.includes('vendeur')) {
       return res.status(403).json({
         success: false,
         error: 'Accès vendeur uniquement',

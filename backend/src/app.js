@@ -133,6 +133,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Route de santé
+// Route de santé
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'OK',
@@ -142,9 +143,20 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Route racine pour Render
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: 'TYDA API opérationnelle 🚀',
+    health: '/api/health',
+    version: '1.0.0'
+  });
+});
+
 // Routes API
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+
 // Routes modulaires par rôle
 app.use('/api/client', clientProductsRoutes);
 app.use('/api/client', clientProfileRoutes);

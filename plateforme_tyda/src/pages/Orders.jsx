@@ -74,7 +74,8 @@ export default function Orders() {
     );
   }
 
-  const orders = ordersData?.data || [];
+  const orders = Array.isArray(ordersData?.data?.data) ? ordersData.data.data : 
+                 Array.isArray(ordersData?.data) ? ordersData.data : [];
 
   if (orders.length === 0) {
     return (

@@ -51,13 +51,25 @@ export default function Checkout() {
     onSuccess: () => {
       queryClient.invalidateQueries(['cart']);
       queryClient.invalidateQueries(['orders']);
-      alert('✅ Commande validée avec succès !');
+      // Toast de succès
+      const toast = document.createElement('div');
+      toast.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 animate-slide-in';
+      toast.innerHTML = '✅ Commande validée avec succès !';
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+      
       navigate('/orders');
     },
     onError: (error) => {
       console.error('Erreur création commande:', error);
       console.error('Erreur détails:', error.response?.data);
-      alert(`❌ Erreur: ${error.response?.data?.message || error.message}`);
+      
+      // Toast d'erreur
+      const toast = document.createElement('div');
+      toast.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 animate-slide-in';
+      toast.innerHTML = `❌ ${error.response?.data?.message || error.message}`;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 4000);
     },
   });
 
@@ -66,12 +78,22 @@ export default function Checkout() {
     
     if (!shippingInfo.firstName || !shippingInfo.lastName || !shippingInfo.phone || 
         !shippingInfo.street || !shippingInfo.city || !shippingInfo.region) {
-      alert('Veuillez remplir tous les champs obligatoires');
+      // Toast d'avertissement
+      const toast = document.createElement('div');
+      toast.className = 'fixed top-4 right-4 bg-orange-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 animate-slide-in';
+      toast.innerHTML = '⚠️ Veuillez remplir tous les champs obligatoires';
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
       return;
     }
     
     if (items.length === 0) {
-      alert('Votre panier est vide');
+      // Toast d'avertissement
+      const toast = document.createElement('div');
+      toast.className = 'fixed top-4 right-4 bg-orange-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 animate-slide-in';
+      toast.innerHTML = '⚠️ Votre panier est vide';
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
       return;
     }
     

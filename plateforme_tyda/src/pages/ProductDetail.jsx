@@ -117,13 +117,24 @@ export default function ProductDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cart'] });
       queryClient.refetchQueries({ queryKey: ['cart'] });
-      alert('✅ Produit ajouté au panier avec succès !');
+      
+      // Toast de succès
+      const toast = document.createElement('div');
+      toast.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 animate-slide-in';
+      toast.innerHTML = '✅ Produit ajouté au panier avec succès !';
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
     },
     onError: (error) => {
       if (error.response?.status === 401) {
         navigate('/login');
       } else {
-        alert('❌ Erreur lors de l\'ajout au panier');
+        // Toast d'erreur
+        const toast = document.createElement('div');
+        toast.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 animate-slide-in';
+        toast.innerHTML = '❌ Erreur lors de l\'ajout au panier';
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
       }
     }
   });
@@ -133,7 +144,14 @@ export default function ProductDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cart'] });
       queryClient.refetchQueries({ queryKey: ['cart'] });
-      alert(`✅ Produit ajouté au panier au prix négocié de ${acceptedPrice?.toLocaleString()} FCFA !`);
+      
+      // Toast de succès
+      const toast = document.createElement('div');
+      toast.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 animate-slide-in';
+      toast.innerHTML = `✅ Produit ajouté au panier au prix négocié de ${acceptedPrice?.toLocaleString()} FCFA !`;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+      
       setShowNegotiation(false);
       setMessages([]);
       setCurrentNegotiationId(null);
@@ -144,7 +162,12 @@ export default function ProductDetail() {
       if (error.response?.status === 401) {
         navigate('/login');
       } else {
-        alert('❌ Erreur lors de l\'ajout au panier');
+        // Toast d'erreur
+        const toast = document.createElement('div');
+        toast.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 animate-slide-in';
+        toast.innerHTML = '❌ Erreur lors de l\'ajout au panier';
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
       }
     }
   });
