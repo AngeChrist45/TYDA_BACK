@@ -35,10 +35,10 @@ const userSchema = new mongoose.Schema({
     minlength: [4, 'Le PIN doit faire au moins 4 chiffres'],
     maxlength: [60, 'PIN invalide'] // 60 pour le hash bcrypt
   },
-  roles: {
-    type: [String],
+  role: {
+    type: String,
     enum: ['client', 'vendeur', 'admin'],
-    default: ['client']
+    default: 'client'
   },
   accountStatus: {
     type: String,
@@ -213,42 +213,8 @@ userSchema.methods.isVerified = function() {
   return this.isPhoneVerified && this.accountStatus === 'active';
 };
 
-// Méthodes pour gérer les rôles multiples
-userSchema.methods.hasRole = function(role) {
-  return this.roles && this.roles.includes(role);
-};
-
-userSchema.methods.isClient = function() {
-  return this.hasRole('client');
-};
-
-userSchema.methods.isVendeur = function() {
-  return this.hasRole('vendeur');
-};
-
-userSchema.methods.isAdmin = function() {
-  return this.hasRole('admin');
-};
-
-userSchema.methods.addRole = function(role) {
-  if (!this.roles) {
-    this.roles = ['client'];
-  }
-  if (!this.roles.includes(role)) {
-    this.roles.push(role);
-  }
-  return this.save();
-};
-
-userSchema.methods.removeRole = function(role) {
-  if (this.roles && this.roles.includes(role)) {
-    this.roles = this.roles.filter(r => r !== role);
-  }
-  return this.save();
-};
-
 userSchema.methods.canSell = function() {
-  return this.hasRole('vendeur') && 
+  return this.role === 'vendeur' && 
          this.isVerified() && 
          this.vendorInfo && 
          this.vendorInfo.validationStatus === 'approved';

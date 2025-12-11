@@ -13,6 +13,7 @@ const auth = async (req, res, next) => {
       });
     }
 
+
     const token = authHeader.substring(7);
 
     if (!token) {
@@ -44,8 +45,7 @@ const auth = async (req, res, next) => {
 
     req.user = {
       userId: decoded.userId,
-      roles: user.roles || ['client'], // Support des rôles multiples
-      role: user.roles && user.roles[0] || 'client', // Rétrocompatibilité
+      role: user.role,
       userDoc: user
     };
 
@@ -88,11 +88,7 @@ const authorize = (...roles) => {
       });
     }
 
-    // Support des rôles multiples
-    const userRoles = req.user.roles || [req.user.role];
-    const hasRequiredRole = roles.some(role => userRoles.includes(role));
-
-    if (!hasRequiredRole) {
+    if (!roles.includes(req.user.role)) {
       return res.status(403).json({
         success: false,
         error: 'Accès refusé',
@@ -114,9 +110,8 @@ const requireApprovedVendor = async (req, res, next) => {
       });
     }
 
-    // Vérifier si l'utilisateur a le rôle vendeur
-    const userRoles = req.user.roles || [req.user.role];
-    if (!userRoles.includes('vendeur')) {
+    // Vérifier si l'utilisateur est vendeur
+    if (req.user.role !== 'vendeur') {
       return res.status(403).json({
         success: false,
         error: 'Accès vendeur uniquement',

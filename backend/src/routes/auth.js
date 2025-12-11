@@ -87,7 +87,7 @@ router.post('/register', [registerLimiter, validateRequest(registerValidation)],
       lastName,
       phone,
       email,
-      roles: ['client'], // Nouveau format array
+      role: 'client',
       pin: Math.random().toString().slice(2, 6).padStart(4, '0'), // PIN temporaire
       accountStatus: 'pending_verification',
       isPhoneVerified: false
@@ -231,14 +231,13 @@ router.post('/set-pin', [validateRequest(setPinValidation)], async (req, res) =>
       {
         userId: user._id,
         phone: user.phone,
-        roles: user.roles || ['client'],
-        role: user.roles && user.roles[0] || 'client' // Rétrocompatibilité
+        role: user.role
       },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
 
-    console.log('[AUTH] PIN défini et compte activé:', { phone, roles: user.roles });
+    console.log('[AUTH] PIN défini et compte activé:', { phone, role: user.role });
 
     res.json({
       success: true,
@@ -251,8 +250,7 @@ router.post('/set-pin', [validateRequest(setPinValidation)], async (req, res) =>
           lastName: user.lastName,
           phone: user.phone,
           email: user.email,
-          roles: user.roles, // Nouveau format array
-          role: user.roles?.[0] || 'client', // Rétrocompatibilité
+          role: user.role,
           accountStatus: user.accountStatus,
           vendorInfo: user.vendorInfo
         }
@@ -330,14 +328,13 @@ router.post('/login', [loginLimiter, validateRequest(loginValidation)], async (r
       {
         userId: user._id,
         phone: user.phone,
-        roles: user.roles || ['client'],
-        role: user.roles && user.roles[0] || 'client' // Rétrocompatibilité
+        role: user.role
       },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
 
-    console.log('[AUTH] Connexion réussie:', { phone, roles: user.roles });
+    console.log('[AUTH] Connexion réussie:', { phone, role: user.role });
 
     res.json({
       success: true,
@@ -350,8 +347,7 @@ router.post('/login', [loginLimiter, validateRequest(loginValidation)], async (r
           lastName: user.lastName,
           phone: user.phone,
           email: user.email,
-          roles: user.roles, // Nouveau format array
-          role: user.roles?.[0] || 'client', // Rétrocompatibilité
+          role: user.role,
           accountStatus: user.accountStatus,
           vendorInfo: user.vendorInfo,
           lastLogin: user.lastLogin
