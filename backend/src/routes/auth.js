@@ -69,7 +69,7 @@ const validateRequest = (schema) => {
 // **ÉTAPE 1: Inscription - Envoi du numéro de téléphone**
 router.post('/register', [registerLimiter, validateRequest(registerValidation)], async (req, res) => {
   try {
-    const { firstName, lastName, phone, email, address } = req.validatedBody;
+    const { firstName, lastName, phone, email } = req.validatedBody;
 
     // Vérifier si le numéro existe déjà
     const existingUser = await User.findOne({ phone });
@@ -87,8 +87,7 @@ router.post('/register', [registerLimiter, validateRequest(registerValidation)],
       lastName,
       phone,
       email,
-      role: 'client', // Toujours client à l'inscription
-      address,
+      roles: ['client'], // Nouveau format array
       pin: Math.random().toString().slice(2, 6).padStart(4, '0'), // PIN temporaire
       accountStatus: 'pending_verification',
       isPhoneVerified: false

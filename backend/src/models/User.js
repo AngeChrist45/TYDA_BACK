@@ -35,10 +35,6 @@ const userSchema = new mongoose.Schema({
     minlength: [4, 'Le PIN doit faire au moins 4 chiffres'],
     maxlength: [60, 'PIN invalide'] // 60 pour le hash bcrypt
   },
-  email: {
-    type: String,
-    trim: true
-  },
   roles: {
     type: [String],
     enum: ['client', 'vendeur', 'admin'],
