@@ -149,7 +149,114 @@ app.get('/', (req, res) => {
     success: true,
     message: 'TYDA API opérationnelle 🚀',
     health: '/api/health',
+    routes: '/api/routes',
     version: '1.0.0'
+  });
+});
+
+// Route pour lister tous les endpoints
+app.get('/api/routes', (req, res) => {
+  const routes = {
+    '🏠 Général': {
+      'GET /': 'Page d\'accueil de l\'API',
+      'GET /api/health': 'État de santé du serveur',
+      'GET /api/routes': 'Liste de tous les endpoints'
+    },
+    '🔐 Authentification': {
+      'POST /api/auth/register': 'Inscription - Étape 1 (envoie OTP)',
+      'POST /api/auth/verify-otp': 'Vérifier le code OTP - Étape 2',
+      'POST /api/auth/set-pin': 'Définir le PIN - Étape 3 (finalise inscription)',
+      'POST /api/auth/login': 'Connexion avec téléphone + PIN',
+      'POST /api/auth/request-otp': 'Demander un nouveau OTP',
+      'POST /api/auth/reset-pin': 'Réinitialiser le PIN',
+      'POST /api/auth/change-pin': 'Changer le PIN (authentifié)',
+      'GET /api/auth/me': 'Obtenir le profil utilisateur connecté',
+      'POST /api/auth/logout': 'Déconnexion'
+    },
+    '👤 Utilisateurs': {
+      'GET /api/users/profile': 'Obtenir son profil',
+      'PUT /api/users/profile': 'Mettre à jour son profil',
+      'PUT /api/users/address': 'Mettre à jour son adresse',
+      'DELETE /api/users/notifications/:id': 'Supprimer une notification'
+    },
+    '🛍️ Produits (Client)': {
+      'GET /api/client/products': 'Lister tous les produits',
+      'GET /api/client/products/:id': 'Détails d\'un produit',
+      'GET /api/client/products?negotiable=true': 'Produits négociables'
+    },
+    '📦 Produits (Vendeur)': {
+      'GET /api/vendor/products/mine': 'Mes produits',
+      'POST /api/vendor/products': 'Créer un produit',
+      'PUT /api/vendor/products/:id': 'Modifier un produit',
+      'DELETE /api/vendor/products/:id': 'Supprimer un produit',
+      'GET /api/vendor/dashboard': 'Tableau de bord vendeur',
+      'GET /api/vendor/orders': 'Commandes vendeur',
+      'GET /api/vendor/notifications': 'Notifications vendeur'
+    },
+    '📁 Catégories': {
+      'GET /api/categories': 'Lister toutes les catégories',
+      'GET /api/categories?tree=true': 'Arbre des catégories',
+      'GET /api/categories?popular=true': 'Catégories populaires',
+      'POST /api/categories': 'Créer une catégorie (admin)',
+      'PUT /api/categories/:id': 'Modifier une catégorie (admin)',
+      'DELETE /api/categories/:id': 'Supprimer une catégorie (admin)'
+    },
+    '🛒 Panier': {
+      'GET /api/cart': 'Obtenir son panier',
+      'POST /api/cart/items': 'Ajouter un produit au panier',
+      'PUT /api/cart/items/:id': 'Modifier la quantité',
+      'DELETE /api/cart/items/:id': 'Retirer un produit',
+      'DELETE /api/cart': 'Vider le panier'
+    },
+    '❤️ Favoris': {
+      'GET /api/favorites': 'Lister ses favoris',
+      'POST /api/favorites': 'Ajouter aux favoris',
+      'DELETE /api/favorites/:id': 'Retirer des favoris'
+    },
+    '📦 Commandes': {
+      'POST /api/orders/checkout': 'Créer une commande',
+      'GET /api/orders': 'Lister ses commandes',
+      'GET /api/orders/:id': 'Détails d\'une commande'
+    },
+    '💰 Négociations': {
+      'POST /api/negotiations': 'Proposer un prix',
+      'GET /api/negotiations': 'Lister ses négociations',
+      'PUT /api/negotiations/:id': 'Répondre à une négociation'
+    },
+    '🏪 Vendeurs': {
+      'POST /api/vendors/request': 'Demander à devenir vendeur',
+      'GET /api/vendors': 'Lister les vendeurs actifs'
+    },
+    '👑 Admin': {
+      'GET /api/admin/dashboard': 'Statistiques admin',
+      'GET /api/admin/vendor-requests': 'Demandes vendeurs',
+      'PUT /api/admin/vendors/:id/approve': 'Approuver un vendeur',
+      'PUT /api/admin/vendors/:id/reject': 'Rejeter un vendeur',
+      'GET /api/admin/products': 'Tous les produits',
+      'DELETE /api/admin/products/:id': 'Supprimer un produit',
+      'GET /api/admin/orders': 'Toutes les commandes',
+      'PUT /api/admin/orders/:id/status': 'Modifier statut commande',
+      'GET /api/admin/users': 'Tous les utilisateurs',
+      'GET /api/admin/categories': 'Toutes les catégories',
+      'POST /api/admin/categories': 'Créer une catégorie',
+      'PUT /api/admin/categories/:id': 'Modifier une catégorie',
+      'DELETE /api/admin/categories/:id': 'Supprimer une catégorie'
+    }
+  };
+
+  res.json({
+    success: true,
+    message: '📚 Documentation des endpoints TYDA API',
+    baseUrl: 'https://tyda-back.onrender.com',
+    authentication: 'Bearer Token dans header Authorization',
+    endpoints: routes,
+    notes: {
+      '🔒 Routes protégées': 'Nécessitent un token JWT valide',
+      '👑 Routes admin': 'Nécessitent le rôle admin',
+      '🏪 Routes vendeur': 'Nécessitent le rôle vendeur approuvé',
+      '📱 Format téléphone': '+225XXXXXXXX (Côte d\'Ivoire)',
+      '🔢 Format PIN': '4 chiffres minimum'
+    }
   });
 });
 
