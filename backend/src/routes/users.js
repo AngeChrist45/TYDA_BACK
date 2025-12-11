@@ -507,7 +507,7 @@ router.post('/request-vendor-status', auth, asyncHandler(async (req, res) => {
     });
   }
 
-  const { businessName, description, category } = value;
+  const { businessName, description, category, photo, identityDocument, fullName } = value;
 
   const user = await User.findById(req.user.userId);
 
@@ -540,8 +540,11 @@ router.post('/request-vendor-status', auth, asyncHandler(async (req, res) => {
   // Créer la demande vendeur
   user.vendorInfo = {
     businessName,
-    description,
+    businessDescription: description,
     category,
+    photo,
+    identityDocument,
+    fullName,
     validationStatus: 'pending',
     requestedAt: new Date()
   };

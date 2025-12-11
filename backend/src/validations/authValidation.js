@@ -201,6 +201,35 @@ const requestVendorStatusValidation = Joi.object({
       'string.max': 'Le nom de l\'entreprise ne peut pas dépasser 100 caractères'
     }),
 
+  fullName: Joi.string()
+    .trim()
+    .min(3)
+    .max(100)
+    .required()
+    .messages({
+      'string.empty': 'Le nom complet est requis',
+      'string.min': 'Le nom complet doit contenir au moins 3 caractères',
+      'any.required': 'Le nom complet est requis'
+    }),
+
+  photo: Joi.string()
+    .uri()
+    .required()
+    .messages({
+      'string.empty': 'La photo de profil est requise',
+      'string.uri': 'L\'URL de la photo doit être valide',
+      'any.required': 'La photo de profil est requise'
+    }),
+
+  identityDocument: Joi.string()
+    .uri()
+    .required()
+    .messages({
+      'string.empty': 'La pièce d\'identité est requise',
+      'string.uri': 'L\'URL de la pièce d\'identité doit être valide',
+      'any.required': 'La pièce d\'identité est requise'
+    }),
+
   description: Joi.string()
     .trim()
     .min(20)
