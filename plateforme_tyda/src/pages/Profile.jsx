@@ -93,8 +93,8 @@ export default function Profile() {
   // Mutation pour demander le statut vendeur
   const requestVendor = useMutation({
     mutationFn: async (data) => {
-      const photoBase64 = await fileToBase64(data.photo);
-      const identityDocBase64 = await fileToBase64(data.identityDocument);
+      const photoBase64 = await compressAndConvertToBase64(data.photo);
+      const identityDocBase64 = await compressAndConvertToBase64(data.identityDocument);
       
       return vendorApi.requestVendor({
         fullName: data.fullName,
@@ -125,6 +125,47 @@ export default function Profile() {
     },
   });
 
+  // Fonction pour compresser une image et la convertir en base64
+  const compressAndConvertToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          
+          // Redimensionner si l'image est trop grande (max 1920px)
+          const maxDimension = 1920;
+          if (width > maxDimension || height > maxDimension) {
+            if (width > height) {
+              height = (height / width) * maxDimension;
+              width = maxDimension;
+            } else {
+              width = (width / height) * maxDimension;
+              height = maxDimension;
+            }
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Compresser à 80% de qualité
+          const base64 = canvas.toDataURL('image/jpeg', 0.8);
+          resolve(base64);
+        };
+        img.onerror = reject;
+      };
+      reader.onerror = reject;
+    });
+  };
+
   const fileToBase64 = (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -137,8 +178,8 @@ export default function Profile() {
   const handleFileChange = (e, fieldName) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        setModal({ show: true, type: 'error', message: 'Le fichier ne doit pas dépasser 5MB' });
+      if (file.size > 10 * 1024 * 1024) {
+        setModal({ show: true, type: 'error', message: 'Le fichier ne doit pas dépasser 10MB' });
         return;
       }
       if (!file.type.startsWith('image/')) {
