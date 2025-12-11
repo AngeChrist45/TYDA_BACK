@@ -251,7 +251,8 @@ router.post('/set-pin', [validateRequest(setPinValidation)], async (req, res) =>
           lastName: user.lastName,
           phone: user.phone,
           email: user.email,
-          role: user.role,
+          roles: user.roles, // Nouveau format array
+          role: user.roles?.[0] || 'client', // Rétrocompatibilité
           accountStatus: user.accountStatus,
           vendorInfo: user.vendorInfo
         }
@@ -349,7 +350,8 @@ router.post('/login', [loginLimiter, validateRequest(loginValidation)], async (r
           lastName: user.lastName,
           phone: user.phone,
           email: user.email,
-          role: user.role,
+          roles: user.roles, // Nouveau format array
+          role: user.roles?.[0] || 'client', // Rétrocompatibilité
           accountStatus: user.accountStatus,
           vendorInfo: user.vendorInfo,
           lastLogin: user.lastLogin
