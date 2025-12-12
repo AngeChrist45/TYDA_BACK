@@ -11,7 +11,7 @@ export default function Cart() {
   const { data: cartData, isLoading, error } = useQuery({
     queryKey: ['cart'],
     queryFn: cartApi.get,
-    staleTime: 1000,
+    staleTime: 1000, 
     cacheTime: 5000,
     refetchOnMount: true,
     refetchOnWindowFocus: false,
@@ -19,7 +19,7 @@ export default function Cart() {
 
   const showNotification = (message) => {
     setNotification(message);
-    setTimeout(() => setNotification(''), 3000);
+    setTimeout(() => setNotification(''), 1000);
   };
 
   const updateQuantity = useMutation({

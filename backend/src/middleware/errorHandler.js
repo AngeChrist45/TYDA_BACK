@@ -1,11 +1,7 @@
-/**
- * Middleware de gestion des erreurs globales
- */
 const errorHandler = (err, req, res, next) => {
   let error = { ...err };
   error.message = err.message;
 
-  // Log de l'erreur pour debugging
   console.error('Erreur API:', {
     message: err.message,
     stack: err.stack,

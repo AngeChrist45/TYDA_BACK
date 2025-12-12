@@ -15,7 +15,6 @@ const categorySchema = new mongoose.Schema({
   },
   slug: {
     type: String,
-    required: true,
     unique: true,
     lowercase: true
   },
@@ -106,7 +105,7 @@ categorySchema.virtual('fullPath').get(async function() {
 
 // Middleware pre-save pour générer le slug
 categorySchema.pre('save', function(next) {
-  if (this.isModified('name')) {
+  if (this.isModified('name') || !this.slug) {
     this.slug = this.name
       .toLowerCase()
       .replace(/[àáâãäå]/g, 'a')

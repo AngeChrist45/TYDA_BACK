@@ -4,7 +4,7 @@ import { Home, Search, ArrowLeft, PackageX } from 'lucide-react';
 export default function NotFound() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-primary/5 via-background to-secondary/5 relative overflow-hidden">
-      {/* Background decorations */}
+
       <div className="absolute top-0 right-0 w-96 h-96 gradient-primary rounded-full blur-3xl opacity-10 animate-pulse"></div>
       <div className="absolute bottom-0 left-0 w-96 h-96 gradient-secondary rounded-full blur-3xl opacity-10 animate-pulse delay-1000"></div>
       
