@@ -89,6 +89,11 @@ router.post('/products', [ auth, authorize('vendeur'), activeVendor, upload.arra
   await product.save();
   await product.populate([{ path: 'vendor', select: 'firstName lastName vendorInfo.businessName' }, { path: 'category', select: 'name slug' }]);
 
+  // Mettre à jour le compteur de produits de la catégorie
+  await Category.findByIdAndUpdate(category, {
+    $inc: { 'stats.productCount': 1 }
+  });
+
   res.status(201).json({ success: true, message: 'Produit créé avec succès. En attente de validation.', data: { product } });
 }));
 
@@ -125,6 +130,16 @@ router.put('/products/:id', [ auth, authorize('vendeur'), validateObjectId('id')
     updates.validation = {};
   }
 
+  // Si la catégorie change, mettre à jour les compteurs
+  if (category && category !== product.category.toString()) {
+    await Category.findByIdAndUpdate(product.category, {
+      $inc: { 'stats.productCount': -1 }
+    });
+    await Category.findByIdAndUpdate(category, {
+      $inc: { 'stats.productCount': 1 }
+    });
+  }
+
   const updatedProduct = await Product.findByIdAndUpdate(req.params.id, updates, { new: true, runValidators: true })
     .populate([{ path: 'vendor', select: 'firstName lastName vendorInfo.businessName' }, { path: 'category', select: 'name slug' }]);
 
@@ -135,6 +150,12 @@ router.put('/products/:id', [ auth, authorize('vendeur'), validateObjectId('id')
 router.delete('/products/:id', [ auth, authorize('vendeur'), validateObjectId('id'), productOwnerOrAdmin ], asyncHandler(async (req, res) => {
   const product = req.product;
   if (product.stats.totalSales > 0) return res.status(403).json({ success: false, message: 'Impossible de supprimer un produit qui a des ventes' });
+  
+  // Décrémenter le compteur de la catégorie
+  await Category.findByIdAndUpdate(product.category, {
+    $inc: { 'stats.productCount': -1 }
+  });
+  
   await Product.findByIdAndDelete(req.params.id);
   res.json({ success: true, message: 'Produit supprimé avec succès' });
 }));
