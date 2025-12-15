@@ -470,17 +470,15 @@ router.get('/', auth, asyncHandler(async (req, res) => {
 
   res.json({
     success: true,
-    data: {
-      orders,
-      pagination: {
-        current: parseInt(page),
-        total: totalPages,
-        count: orders.length,
-        totalItems: total,
-        hasNext: page < totalPages,
-        hasPrev: page > 1,
-        limit: parseInt(limit)
-      }
+    data: orders,
+    pagination: {
+      current: parseInt(page),
+      total: totalPages,
+      count: orders.length,
+      totalItems: total,
+      hasNext: page < totalPages,
+      hasPrev: page > 1,
+      limit: parseInt(limit)
     }
   });
 }));

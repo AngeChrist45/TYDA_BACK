@@ -20,6 +20,7 @@ export default function Profile() {
     businessName: '',
     businessDescription: '',
     businessAddress: '',
+    whatsapp: '',
     photo: null,
     identityDocument: null,
     photoPreview: null,
@@ -101,6 +102,7 @@ export default function Profile() {
         businessName: data.businessName,
         businessDescription: data.businessDescription,
         businessAddress: data.businessAddress,
+        whatsapp: data.whatsapp,
         photo: photoBase64,
         identityDocument: identityDocBase64,
       });
@@ -112,6 +114,7 @@ export default function Profile() {
         businessName: '',
         businessDescription: '',
         businessAddress: '',
+        whatsapp: '',
         photo: null,
         identityDocument: null,
         photoPreview: null,
@@ -654,7 +657,7 @@ export default function Profile() {
                     e.preventDefault();
                     if (!vendorFormData.fullName || !vendorFormData.businessName || 
                         !vendorFormData.businessDescription || !vendorFormData.businessAddress ||
-                        !vendorFormData.photo || !vendorFormData.identityDocument) {
+                        !vendorFormData.whatsapp || !vendorFormData.photo || !vendorFormData.identityDocument) {
                       setModal({ show: true, type: 'error', message: 'Tous les champs sont requis' });
                       return;
                     }
@@ -708,6 +711,21 @@ export default function Profile() {
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                       required
                     />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">WhatsApp *</label>
+                    <input
+                      type="tel"
+                      value={vendorFormData.whatsapp}
+                      onChange={(e) => setVendorFormData({...vendorFormData, whatsapp: e.target.value})}
+                      placeholder="+225XXXXXXXX"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      pattern="^\+225[0-9]{8,10}$"
+                      title="Format: +225XXXXXXXX"
+                      required
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Pour vous contacter rapidement en cas de besoin</p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">

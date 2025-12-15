@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { cartApi, ordersApi } from '../lib/api';
+import { cartApi, ordersApi, authApi } from '../lib/api';
 
 export default function Checkout() {
   const navigate = useNavigate();
@@ -15,6 +15,27 @@ export default function Checkout() {
     region: '',
     notes: ''
   });
+
+  // Récupérer les infos du profil pour pré-remplir
+  const { data: profileData } = useQuery({
+    queryKey: ['profile'],
+    queryFn: authApi.getCurrentUser,
+    enabled: !!localStorage.getItem('tyda_token'),
+  });
+
+  // Pré-remplir les champs avec les infos du profil
+  useEffect(() => {
+    if (profileData?.data) {
+      const user = profileData.data;
+      setShippingInfo(prev => ({
+        ...prev,
+        firstName: user.firstName || prev.firstName,
+        lastName: user.lastName || prev.lastName,
+        phone: user.phone || prev.phone,
+        street: user.address || prev.street,
+      }));
+    }
+  }, [profileData]);
 
   const { data: cartData, isLoading } = useQuery({
     queryKey: ['cart'],
@@ -48,9 +69,12 @@ export default function Checkout() {
       console.log('📦 Sending order data:', orderData);
       return ordersApi.create(orderData);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries(['cart']);
-      queryClient.invalidateQueries(['orders']);
+    onSuccess: async () => {
+      // Invalider et refetch les données
+      await queryClient.invalidateQueries({ queryKey: ['cart'] });
+      await queryClient.invalidateQueries({ queryKey: ['orders'] });
+      await queryClient.refetchQueries({ queryKey: ['orders'] });
+      
       // Toast de succès
       const toast = document.createElement('div');
       toast.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 animate-slide-in';
@@ -58,7 +82,10 @@ export default function Checkout() {
       document.body.appendChild(toast);
       setTimeout(() => toast.remove(), 3000);
       
-      navigate('/orders');
+      // Attendre un peu avant de rediriger pour s'assurer que les données sont mises à jour
+      setTimeout(() => {
+        navigate('/orders');
+      }, 500);
     },
     onError: (error) => {
       console.error('Erreur création commande:', error);

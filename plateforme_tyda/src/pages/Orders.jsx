@@ -60,9 +60,12 @@ const statusConfig = {
 export default function Orders() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   
-  const { data: ordersData, isLoading } = useQuery({
+  const { data: ordersData, isLoading, refetch } = useQuery({
     queryKey: ['orders'],
     queryFn: ordersApi.getAll,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+    staleTime: 0,
   });
 
   if (isLoading) {
@@ -74,8 +77,8 @@ export default function Orders() {
     );
   }
 
-  const orders = Array.isArray(ordersData?.data?.data) ? ordersData.data.data : 
-                 Array.isArray(ordersData?.data) ? ordersData.data : [];
+  // Le backend renvoie maintenant { success: true, data: orders }
+  const orders = Array.isArray(ordersData?.data) ? ordersData.data : [];
 
   if (orders.length === 0) {
     return (
@@ -135,7 +138,7 @@ export default function Orders() {
           order={selectedOrder}
           onClose={() => setSelectedOrder(null)}
         />
-        
+
       )}
     </div>
   );

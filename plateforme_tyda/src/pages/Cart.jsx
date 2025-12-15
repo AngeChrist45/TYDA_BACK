@@ -139,6 +139,11 @@ export default function Cart() {
                   {item.price?.toLocaleString()} FCFA
                 </p>
 
+                {/* Stock info */}
+                <p className="text-sm text-gray-600 mb-3">
+                  Stock disponible: <span className="font-semibold">{item.product.inventory?.quantity || 0}</span>
+                </p>
+
                 <div className="flex items-center gap-4">
                   {/* Quantity Controls */}
                   <div className="flex items-center border border-gray-300 rounded-lg">
@@ -159,9 +164,17 @@ export default function Cart() {
                     </span>
                     
                     <button
-                      onClick={() => updateQuantity.mutate({ itemId: item._id, quantity: item.quantity + 1 })}
-                      disabled={updateQuantity.isLoading}
-                      className="px-3 py-1 hover:bg-gray-50 disabled:opacity-50"
+                      onClick={() => {
+                        const maxStock = item.product.inventory?.quantity || 0;
+                        if (item.quantity >= maxStock) {
+                          showNotification(`⚠️ Stock maximum atteint (${maxStock} disponibles)`);
+                          return;
+                        }
+                        updateQuantity.mutate({ itemId: item._id, quantity: item.quantity + 1 });
+                      }}
+                      disabled={updateQuantity.isLoading || item.quantity >= (item.product.inventory?.quantity || 0)}
+                      className="px-3 py-1 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title={item.quantity >= (item.product.inventory?.quantity || 0) ? "Stock maximum atteint" : "Augmenter la quantité"}
                     >
                       +
                     </button>
@@ -175,6 +188,13 @@ export default function Cart() {
                     🗑️ Retirer
                   </button>
                 </div>
+
+                {/* Avertissement stock */}
+                {item.quantity > (item.product.inventory?.quantity || 0) && (
+                  <div className="mt-3 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-700">
+                    ⚠️ Quantité supérieure au stock disponible ({item.product.inventory?.quantity || 0})
+                  </div>
+                )}
 
                 <p className="text-sm text-gray-600 mt-2">
                   Sous-total: <span className="font-bold text-gray-900">{(item.price * item.quantity).toLocaleString()} FCFA</span>

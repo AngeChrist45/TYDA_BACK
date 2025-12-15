@@ -66,6 +66,11 @@ const userSchema = new mongoose.Schema({
       type: String,
       trim: true
     },
+    whatsapp: {
+      type: String,
+      trim: true,
+      match: [/^\+225[0-9]{8,10}$/, 'Format WhatsApp invalide (+225XXXXXXXX)']
+    },
     fullName: {
       type: String,
       trim: true
@@ -84,8 +89,7 @@ const userSchema = new mongoose.Schema({
     },
     validationStatus: {
       type: String,
-      enum: ['pending', 'approved', 'rejected', 'disapproved'],
-      default: 'pending'
+      enum: ['pending', 'approved', 'rejected', 'disapproved']
     },
     rejectionReason: {
       type: String,

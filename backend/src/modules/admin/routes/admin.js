@@ -95,8 +95,11 @@ router.get('/vendor-requests', [
   authorize('admin')
 ], asyncHandler(async (req, res) => {
   try {
+    // Récupérer uniquement les utilisateurs qui ont VRAIMENT fait une demande de vendeur
+    // (ceux qui ont rempli le formulaire avec businessName)
     const vendors = await User.find({
-      'vendorInfo.validationStatus': { $exists: true }
+      'vendorInfo.validationStatus': { $exists: true },
+      'vendorInfo.businessName': { $exists: true, $ne: '' }
     })
       .select('firstName lastName email phone vendorInfo createdAt accountStatus role')
       .sort({ 'vendorInfo.requestedAt': -1, createdAt: -1 })
