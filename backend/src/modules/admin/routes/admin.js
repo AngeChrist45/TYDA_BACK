@@ -948,7 +948,11 @@ router.get('/orders', [
       .populate('customer', 'firstName lastName email phone')
       .populate({
         path: 'items.product',
-        select: 'name price images'
+        select: 'title price images'
+      })
+      .populate({
+        path: 'items.vendor',
+        select: 'firstName lastName phone vendorInfo.businessName vendorInfo.whatsapp'
       })
       .sort({ createdAt: -1 })
       .lean();
