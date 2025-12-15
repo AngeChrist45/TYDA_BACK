@@ -84,12 +84,21 @@ const userSchema = new mongoose.Schema({
     },
     validationStatus: {
       type: String,
-      enum: ['pending', 'approved', 'rejected'],
+      enum: ['pending', 'approved', 'rejected', 'disapproved'],
       default: 'pending'
     },
     rejectionReason: {
       type: String,
       trim: true
+    },
+    disapprovalNote: {
+      type: String,
+      trim: true
+    },
+    disapprovedAt: Date,
+    disapprovedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
     },
     requestedAt: Date,
     validatedAt: Date,
@@ -105,7 +114,7 @@ const userSchema = new mongoose.Schema({
   notifications: [{
     type: {
       type: String,
-      enum: ['vendor_approved', 'vendor_rejected', 'product_approved', 'product_rejected', 'order_update', 'system'],
+      enum: ['vendor_approved', 'vendor_rejected', 'vendor_disapproved', 'product_approved', 'product_rejected', 'order_update', 'system'],
       required: true
     },
     title: {

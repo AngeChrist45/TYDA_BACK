@@ -384,12 +384,31 @@ router.post('/checkout', [
 
   await order.save();
 
-  // Réserver le stock
+  // Décrémenter le stock et réserver
   for (const item of orderItems) {
     const Product = require('../models/Product');
-    await Product.findByIdAndUpdate(item.product, {
-      $inc: { 'inventory.reserved': item.quantity }
-    });
+    const product = await Product.findById(item.product);
+    
+    if (product) {
+      // Vérifier une dernière fois le stock (sécurité)
+      if (product.inventory.quantity < item.quantity) {
+        // Annuler la commande et retourner une erreur
+        await Order.findByIdAndDelete(order._id);
+        return res.status(400).json({
+          success: false,
+          message: `Stock insuffisant pour "${product.title}". Commande annulée.`,
+          available: product.inventory.quantity,
+          requested: item.quantity
+        });
+      }
+      
+      // Décrémenter la quantité disponible
+      product.inventory.quantity -= item.quantity;
+      product.inventory.reserved += item.quantity;
+      await product.save();
+      
+      console.log(`📦 Stock mis à jour pour "${product.title}": ${product.inventory.quantity + item.quantity} → ${product.inventory.quantity}`);
+    }
   }
 
   // Vider le panier

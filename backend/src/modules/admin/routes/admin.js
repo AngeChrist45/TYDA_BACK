@@ -255,6 +255,94 @@ router.put('/vendors/:id/reject', [
   }
 }));
 
+// Route pour désapprouver un vendeur (le remettre en client) avec note obligatoire
+router.put('/vendors/:id/disapprove', [
+  auth,
+  authorize('admin'),
+  validateObjectId('id')
+], asyncHandler(async (req, res) => {
+  try {
+    const { note } = req.body;
+    
+    if (!note || note.trim().length < 10) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Note obligatoire (minimum 10 caractères)' 
+      });
+    }
+
+    const user = await User.findById(req.params.id);
+    
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Utilisateur non trouvé' });
+    }
+
+    if (user.role !== 'vendeur') {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Cet utilisateur n\'est pas vendeur' 
+      });
+    }
+
+    // Sauvegarder les infos vendeur avant de les modifier
+    const previousVendorInfo = user.vendorInfo ? { ...user.vendorInfo.toObject() } : {};
+
+    // REMETTRE en client
+    user.role = 'client';
+    
+    // Initialiser vendorInfo si nécessaire
+    if (!user.vendorInfo) {
+      user.vendorInfo = {};
+    }
+    
+    // Mettre à jour le statut de validation
+    user.vendorInfo.validationStatus = 'disapproved';
+    user.vendorInfo.disapprovedAt = new Date();
+    user.vendorInfo.disapprovedBy = req.user.userId;
+    user.vendorInfo.disapprovalNote = note.trim();
+
+    // Créer une notification pour l'utilisateur
+    user.notifications.push({
+      type: 'vendor_disapproved',
+      title: '⚠️ Compte vendeur désapprouvé',
+      message: `Votre compte vendeur a été désapprouvé et vous avez été remis en tant que client. Motif : ${note.trim()}`,
+      read: false,
+      createdAt: new Date(),
+      data: {
+        businessName: previousVendorInfo.businessName || 'N/A',
+        disapprovalNote: note.trim(),
+        disapprovedAt: new Date()
+      }
+    });
+
+    await user.save();
+
+    console.log('[ADMIN] Vendeur désapprouvé:', { 
+      userId: user._id, 
+      businessName: previousVendorInfo.businessName || 'N/A',
+      note: note.trim() 
+    });
+
+    res.json({
+      success: true,
+      message: 'Vendeur désapprouvé et remis en client',
+      data: {
+        userId: user._id,
+        role: user.role,
+        validationStatus: user.vendorInfo.validationStatus,
+        disapprovedAt: user.vendorInfo.disapprovedAt,
+        disapprovalNote: note.trim()
+      }
+    });
+  } catch (error) {
+    console.error('Erreur désapprobation vendeur:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erreur lors de la désapprobation du vendeur' 
+    });
+  }
+}));
+
 router.get('/vendors/pending', [
   auth,
   authorize('admin')
@@ -887,9 +975,10 @@ router.put('/orders/:id/status', [
 ], asyncHandler(async (req, res) => {
   try {
     const Order = require('../../../models/Order');
-    const { status } = req.body;
+    const User = require('../../../models/User');
+    const { status, note } = req.body;
 
-    const validStatuses = ['pending', 'processing', 'delivered', 'cancelled'];
+    const validStatuses = ['en_attente', 'confirme', 'prepare', 'expedie', 'livre', 'annule'];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ 
         success: false, 
@@ -906,14 +995,65 @@ router.put('/orders/:id/status', [
       });
     }
 
+    const oldStatus = order.status;
     order.status = status;
     order.statusHistory.push({
       status,
       updatedBy: req.user.userId,
-      note: `Statut mis à jour par l'administrateur`
+      note: note || `Statut mis à jour par l'administrateur`,
+      timestamp: new Date()
     });
 
     await order.save();
+
+    // Si la commande est annulée, restaurer le stock
+    if (status === 'annule' && oldStatus !== 'annule') {
+      console.log('🔄 Commande annulée, restauration du stock...');
+      const Product = require('../../../models/Product');
+      
+      for (const item of order.items) {
+        const product = await Product.findById(item.product);
+        if (product) {
+          product.inventory.quantity += item.quantity;
+          product.inventory.reserved = Math.max(0, product.inventory.reserved - item.quantity);
+          await product.save();
+          console.log(`✅ Stock restauré pour "${product.title}": +${item.quantity}`);
+        }
+      }
+    }
+
+    // Si la commande est livrée, libérer les réservations
+    if (status === 'livre' && oldStatus !== 'livre') {
+      const Product = require('../../../models/Product');
+      for (const item of order.items) {
+        const product = await Product.findById(item.product);
+        if (product) {
+          product.inventory.reserved = Math.max(0, product.inventory.reserved - item.quantity);
+          await product.save();
+        }
+      }
+    }
+
+    // Notifier le client
+    const customer = await User.findById(order.customer);
+    if (customer) {
+      const statusMessages = {
+        confirme: 'Votre commande a été confirmée',
+        prepare: 'Votre commande est en préparation',
+        expedie: 'Votre commande a été expédiée',
+        livre: 'Votre commande a été livrée',
+        annule: 'Votre commande a été annulée'
+      };
+
+      customer.notifications.push({
+        type: 'order_status_update',
+        title: 'Mise à jour commande',
+        message: statusMessages[status] + (note ? ` - ${note}` : ''),
+        read: false,
+        data: { orderId: order._id, status, note }
+      });
+      await customer.save();
+    }
 
     res.json({
       success: true,
@@ -1292,6 +1432,7 @@ router.put('/orders/:id/status', [
     }
 
     // Mettre à jour le statut
+    const oldStatus = order.status;
     order.status = status;
     order.statusHistory.push({
       status,
@@ -1301,6 +1442,41 @@ router.put('/orders/:id/status', [
     });
 
     await order.save();
+
+    // Si la commande est annulée, restaurer le stock
+    if (status === 'annule' && oldStatus !== 'annule') {
+      console.log('🔄 Commande annulée, restauration du stock...');
+      const Product = require('../../../models/Product');
+      
+      for (const item of order.items) {
+        const product = await Product.findById(item.product);
+        if (product) {
+          // Restaurer la quantité
+          product.inventory.quantity += item.quantity;
+          product.inventory.reserved = Math.max(0, product.inventory.reserved - item.quantity);
+          await product.save();
+          
+          console.log(`✅ Stock restauré pour "${product.title}": +${item.quantity} (total: ${product.inventory.quantity})`);
+        }
+      }
+    }
+
+    // Si la commande est livrée, décrémenter les réservations
+    if (status === 'livre' && oldStatus !== 'livre') {
+      console.log('📦 Commande livrée, mise à jour des réservations...');
+      const Product = require('../../../models/Product');
+      
+      for (const item of order.items) {
+        const product = await Product.findById(item.product);
+        if (product) {
+          // Décrémenter les réservations
+          product.inventory.reserved = Math.max(0, product.inventory.reserved - item.quantity);
+          await product.save();
+          
+          console.log(`✅ Réservation libérée pour "${product.title}": -${item.quantity} reserved`);
+        }
+      }
+    }
 
     // Notifier le client
     const customer = await User.findById(order.customer);
@@ -1316,7 +1492,7 @@ router.put('/orders/:id/status', [
       customer.notifications.push({
         type: 'order_status_update',
         title: 'Mise à jour commande',
-        message: statusMessages[status],
+        message: statusMessages[status] + (note ? ` - ${note}` : ''),
         read: false,
         data: {
           orderId: order._id,
