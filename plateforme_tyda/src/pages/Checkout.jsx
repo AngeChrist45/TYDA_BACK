@@ -28,7 +28,7 @@ export default function Checkout() {
     return sum + (item.price * item.quantity);
   }, 0);
   
-  const shippingFee = subtotal > 0 ? 1000 : 0; // 1000 FCFA frais de livraison
+  const shippingFee = 0; // Livraison gratuite (TODO: Admin peut configurer)
   const total = subtotal + shippingFee;
 
   const createOrder = useMutation({
@@ -278,7 +278,7 @@ export default function Checkout() {
               </div>
               <div className="flex justify-between text-gray-600">
                 <span>Livraison</span>
-                <span>{shippingFee.toLocaleString()} FCFA</span>
+                <span className="text-[#2ECC71] font-medium">Gratuite</span>
               </div>
               <div className="flex justify-between text-xl font-bold text-gray-900 pt-2 border-t border-gray-200">
                 <span>Total</span>

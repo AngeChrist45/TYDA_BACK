@@ -49,25 +49,38 @@ export default function ProductDetail() {
         console.log('📨 Message reçu du bot:', data);
         setBotTyping(false);
         
+        // Vérifier si c'est un message d'acceptation
+        if (data.status === 'accepted') {
+          const finalPrice = data.proposedPrice || data.finalPrice;
+          console.log('✅ Négociation acceptée via negotiation-message! Prix:', finalPrice);
+          setNegotiationAccepted(true);
+          setAcceptedPrice(finalPrice);
+          console.log('📌 States mis à jour - negotiationAccepted: true, acceptedPrice:', finalPrice);
+        }
+        
         if (data.message) {
           setMessages(prev => [...prev, {
             from: 'bot',
             text: data.message,
-            proposedPrice: data.proposedPrice,
-            timestamp: new Date()
+            proposedPrice: data.proposedPrice || data.finalPrice,
+            timestamp: new Date(),
+            accepted: data.status === 'accepted'
           }]);
         }
       });
 
       socketRef.current.on('negotiation-accepted', (data) => {
         console.log('✅ Négociation acceptée:', data);
+        const finalPrice = data.finalPrice || data.proposedPrice;
+        console.log('💰 Prix final capturé:', finalPrice);
         setBotTyping(false);
         setNegotiationAccepted(true);
-        setAcceptedPrice(data.finalPrice);
+        setAcceptedPrice(finalPrice);
+        console.log('📌 States mis à jour - negotiationAccepted: true, acceptedPrice:', finalPrice);
         setMessages(prev => [...prev, {
           from: 'bot',
-          text: data.message || `Excellent ! J'accepte votre proposition de ${data.finalPrice?.toLocaleString()} FCFA. 🎉`,
-          proposedPrice: data.finalPrice,
+          text: data.message || `Excellent ! J'accepte votre proposition de ${finalPrice?.toLocaleString()} FCFA. 🎉`,
+          proposedPrice: finalPrice,
           timestamp: new Date(),
           accepted: true
         }]);
@@ -113,7 +126,10 @@ export default function ProductDetail() {
   });
 
   const addToCart = useMutation({
-    mutationFn: () => cartApi.add(id, quantity),
+    mutationFn: () => {
+      console.log('🛒 Ajout au panier normal:', { productId: id, quantity });
+      return cartApi.add(id, quantity);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cart'] });
       queryClient.refetchQueries({ queryKey: ['cart'] });
@@ -126,13 +142,14 @@ export default function ProductDetail() {
       setTimeout(() => toast.remove(), 3000);
     },
     onError: (error) => {
+      console.error('❌ Erreur ajout panier:', error.response?.data || error.message);
       if (error.response?.status === 401) {
         navigate('/login');
       } else {
         // Toast d'erreur
         const toast = document.createElement('div');
         toast.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 animate-slide-in';
-        toast.innerHTML = '❌ Erreur lors de l\'ajout au panier';
+        toast.innerHTML = `❌ ${error.response?.data?.message || 'Erreur lors de l\'ajout au panier'}`;
         document.body.appendChild(toast);
         setTimeout(() => toast.remove(), 3000);
       }
@@ -140,7 +157,14 @@ export default function ProductDetail() {
   });
 
   const addNegotiatedToCart = useMutation({
-    mutationFn: () => cartApi.add(id, quantity, acceptedPrice),
+    mutationFn: () => {
+      console.log('🤝 Ajout au panier avec prix négocié:', { 
+        productId: id, 
+        quantity, 
+        negotiatedPrice: acceptedPrice 
+      });
+      return cartApi.add(id, quantity, acceptedPrice);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cart'] });
       queryClient.refetchQueries({ queryKey: ['cart'] });
@@ -208,8 +232,11 @@ export default function ProductDetail() {
           
           // Si le bot accepte, mettre à jour les états
           if (botResponse.status === 'accepted') {
+            const finalPrice = botResponse.proposedPrice || botResponse.finalPrice;
+            console.log('✅ Négociation acceptée immédiatement! Prix final:', finalPrice);
             setNegotiationAccepted(true);
-            setAcceptedPrice(botResponse.proposedPrice || botResponse.finalPrice);
+            setAcceptedPrice(finalPrice);
+            console.log('📌 States mis à jour - negotiationAccepted: true, acceptedPrice:', finalPrice);
           }
           
           setMessages(prev => [...prev, {
@@ -479,12 +506,24 @@ export default function ProductDetail() {
                     navigate('/login');
                     return;
                   }
+                  if (quantity > (product.inventory?.quantity || 0)) {
+                    const toast = document.createElement('div');
+                    toast.className = 'fixed top-4 right-4 bg-orange-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 animate-slide-in';
+                    toast.innerHTML = `⚠️ Stock insuffisant ! Seulement ${product.inventory?.quantity || 0} disponible(s)`;
+                    document.body.appendChild(toast);
+                    setTimeout(() => toast.remove(), 3000);
+                    return;
+                  }
                   addToCart.mutate();
                 }}
-                disabled={addToCart.isLoading || !product.inventory?.quantity}
-                className="w-full py-3 bg-[#FF6B35] text-white font-medium rounded-lg hover:bg-[#e55a2b] disabled:opacity-50"
+                disabled={addToCart.isLoading || !product.inventory?.quantity || quantity > (product.inventory?.quantity || 0)}
+                className="w-full py-3 bg-[#FF6B35] text-white font-medium rounded-lg hover:bg-[#e55a2b] disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {addToCart.isLoading ? 'Ajout en cours...' : 'Ajouter au panier'}
+                {!product.inventory?.quantity 
+                  ? 'Rupture de stock' 
+                  : addToCart.isLoading 
+                  ? 'Ajout en cours...' 
+                  : 'Ajouter au panier'}
               </button>
 
               <button
@@ -607,10 +646,13 @@ export default function ProductDetail() {
                   )}
                   
                   {/* Bouton Ajouter au panier si la négociation est acceptée */}
-                  {negotiationAccepted && (
+                  {negotiationAccepted && acceptedPrice && (
                     <div className="flex justify-center">
                       <button
-                        onClick={() => addNegotiatedToCart.mutate()}
+                        onClick={() => {
+                          console.log('🎯 Clic bouton panier négocié - Price:', acceptedPrice, 'Quantity:', quantity);
+                          addNegotiatedToCart.mutate();
+                        }}
                         disabled={addNegotiatedToCart.isLoading}
                         className="bg-[#2ECC71] hover:bg-[#27AE60] text-white px-8 py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                       >

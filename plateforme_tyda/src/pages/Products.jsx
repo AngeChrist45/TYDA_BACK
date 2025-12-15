@@ -11,12 +11,17 @@ function ProductCard({ product }) {
   const token = localStorage.getItem('tyda_token');
 
   const addToCart = useMutation({
-    mutationFn: () => cartApi.add(product._id, quantity),
+    mutationFn: () => {
+      console.log('🛒 [Products] Ajout au panier:', { productId: product._id, quantity });
+      return cartApi.add(product._id, quantity);
+    },
     onSuccess: () => {
+      console.log('✅ [Products] Produit ajouté au panier avec succès');
       queryClient.invalidateQueries({ queryKey: ['cart'] });
       queryClient.refetchQueries({ queryKey: ['cart'] });
     },
     onError: (error) => {
+      console.error('❌ [Products] Erreur ajout panier:', error.response?.data || error.message);
       if (error.response?.status === 401) {
         navigate('/login');
       }

@@ -5,7 +5,7 @@ import { Phone, User, Mail, Lock, Loader2, ArrowLeft, ArrowRight, ShieldCheck } 
 
 export default function Register() {
   const navigate = useNavigate();
-  const [step, setStep] = useState(1); // 1: Phone + Info, 2: OTP, 3: PIN
+  const [step, setStep] = useState(1); 
   const [phone, setPhone] = useState('+225');
   const [otp, setOtp] = useState('');
   const [devOtp, setDevOtp] = useState(''); // Code OTP en mode dev
@@ -237,6 +237,7 @@ export default function Register() {
           {step === 2 && (
             <form onSubmit={handleVerifyOTP} className="space-y-5">
               <div>
+                
                 <label className="block text-sm font-medium mb-2 text-center">Code de vérification</label>
                 <div className="relative">
                   <ShieldCheck className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />

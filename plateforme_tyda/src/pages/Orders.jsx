@@ -135,6 +135,7 @@ export default function Orders() {
           order={selectedOrder}
           onClose={() => setSelectedOrder(null)}
         />
+        
       )}
     </div>
   );
@@ -331,16 +332,18 @@ function OrderDetailsModal({ order, onClose }) {
             <div className="space-y-2 text-white/90 mb-4">
               <div className="flex justify-between">
                 <span>Sous-total</span>
-                <span>{order.totalPrice?.toLocaleString()} FCFA</span>
+                <span>{(order.totals?.subtotal || order.totalPrice)?.toLocaleString()} FCFA</span>
               </div>
               <div className="flex justify-between">
                 <span>Frais de livraison</span>
-                <span>{order.shippingCost?.toLocaleString() || 0} FCFA</span>
+                <span className="text-green-300 font-medium">
+                  {order.totals?.shipping > 0 ? `${order.totals.shipping.toLocaleString()} FCFA` : 'Gratuite'}
+                </span>
               </div>
             </div>
             <div className="flex justify-between pt-4 border-t border-white/20 text-white font-bold text-xl">
               <span>Total</span>
-              <span>{((order.totalPrice || 0) + (order.shippingCost || 0)).toLocaleString()} FCFA</span>
+              <span>{(order.totals?.total || order.totalPrice)?.toLocaleString()} FCFA</span>
             </div>
           </div>
         </div>
