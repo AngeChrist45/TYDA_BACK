@@ -9,6 +9,8 @@ const { createServer } = require('http');
 const { Server } = require('socket.io');
 require('dotenv').config();
 
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./swagger');
 // Importation des routes
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
@@ -38,20 +40,19 @@ const User = require('./models/User');
 const app = express();
 const server = createServer(app);
 
-// Configuration Socket.IO pour le bot de négociation en temps réel
+
 const io = new Server(server, {
   cors: {
     origin: function (origin, callback) {
-      // Autoriser les requêtes sans origine
       if (!origin) return callback(null, true);
-      
+
       // En développement, autoriser localhost et IP locales
       if (process.env.NODE_ENV !== 'production') {
         if (origin.includes('localhost') || origin.match(/^http:\/\/192\.168\.\d+\.\d+/)) {
           return callback(null, true);
         }
       }
-      
+
       const allowedOrigins = [
         process.env.FRONTEND_WEB_URL || 'http://localhost:3000',
         process.env.FRONTEND_MOBILE_URL || 'http://localhost:19006',
@@ -60,7 +61,7 @@ const io = new Server(server, {
         'http://localhost:8080',
         'http://localhost:4173',
       ];
-      
+
       if (allowedOrigins.indexOf(origin) !== -1) {
         callback(null, true);
       } else {
@@ -72,46 +73,42 @@ const io = new Server(server, {
   }
 });
 
-// Initialisation du bot de négociation avec Socket.IO
 const negotiationBot = new NegotiationBot(io);
 
-// Rendre io accessible dans les routes
 app.set('io', io);
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limite de 100 requêtes par IP toutes les 15 minutes
+  windowMs: 15 * 60 * 1000,
+  max: 100
 });
 
 // Middlewares globaux
-app.use(helmet()); // Sécurité des headers HTTP
-app.use(compression()); // Compression des réponses
-app.use(morgan('combined')); // Logging des requêtes
-app.use(limiter); // Rate limiting
+app.use(helmet());
+app.use(compression());
+app.use(morgan('combined'));
+app.use(limiter);
 
 // Configuration CORS
 const corsOptions = {
   origin: function (origin, callback) {
-    // Autoriser les requêtes sans origine (Postman, mobile apps, etc.)
     if (!origin) return callback(null, true);
-    
+
     const allowedOrigins = [
       process.env.FRONTEND_WEB_URL || 'http://localhost:3000',
       process.env.FRONTEND_MOBILE_URL || 'http://localhost:19006',
-      'http://localhost:5173', // Vite dev server (frontend)
-      'http://localhost:5174', // Vite dev server (alternate port)
-      'http://localhost:8080', // Backoffice admin
-      'http://localhost:4173', // Vite preview
+      'http://localhost:5173',
+      'http://localhost:5174',
+      'http://localhost:8080',
+      'http://localhost:4173',
     ];
-    
-    // En développement, autoriser toutes les origines localhost et IP locales
+
     if (process.env.NODE_ENV !== 'production') {
       if (origin.includes('localhost') || origin.match(/^http:\/\/192\.168\.\d+\.\d+/)) {
         return callback(null, true);
       }
     }
-    
+
     if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
       callback(null, true);
     } else {
@@ -132,8 +129,6 @@ app.set('trust proxy', 1);
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Route de santé
-// Route de santé
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'OK',
@@ -157,12 +152,12 @@ app.get('/', (req, res) => {
 // Route pour lister tous les endpoints
 app.get('/api/routes', (req, res) => {
   const routes = {
-    '🏠 Général': {
+    ' Général': {
       'GET /': 'Page d\'accueil de l\'API',
       'GET /api/health': 'État de santé du serveur',
       'GET /api/routes': 'Liste de tous les endpoints'
     },
-    '🔐 Authentification': {
+    'Authentification': {
       'POST /api/auth/register': 'Inscription - Étape 1 (envoie OTP)',
       'POST /api/auth/verify-otp': 'Vérifier le code OTP - Étape 2',
       'POST /api/auth/set-pin': 'Définir le PIN - Étape 3 (finalise inscription)',
@@ -173,18 +168,18 @@ app.get('/api/routes', (req, res) => {
       'GET /api/auth/me': 'Obtenir le profil utilisateur connecté',
       'POST /api/auth/logout': 'Déconnexion'
     },
-    '👤 Utilisateurs': {
+    ' Utilisateurs': {
       'GET /api/users/profile': 'Obtenir son profil',
       'PUT /api/users/profile': 'Mettre à jour son profil',
       'PUT /api/users/address': 'Mettre à jour son adresse',
       'DELETE /api/users/notifications/:id': 'Supprimer une notification'
     },
-    '🛍️ Produits (Client)': {
+    ' Produits (Client)': {
       'GET /api/client/products': 'Lister tous les produits',
       'GET /api/client/products/:id': 'Détails d\'un produit',
       'GET /api/client/products?negotiable=true': 'Produits négociables'
     },
-    '📦 Produits (Vendeur)': {
+    ' Produits (Vendeur)': {
       'GET /api/vendor/products/mine': 'Mes produits',
       'POST /api/vendor/products': 'Créer un produit',
       'PUT /api/vendor/products/:id': 'Modifier un produit',
@@ -193,7 +188,7 @@ app.get('/api/routes', (req, res) => {
       'GET /api/vendor/orders': 'Commandes vendeur',
       'GET /api/vendor/notifications': 'Notifications vendeur'
     },
-    '📁 Catégories': {
+    ' Catégories': {
       'GET /api/categories': 'Lister toutes les catégories',
       'GET /api/categories?tree=true': 'Arbre des catégories',
       'GET /api/categories?popular=true': 'Catégories populaires',
@@ -208,26 +203,26 @@ app.get('/api/routes', (req, res) => {
       'DELETE /api/cart/items/:id': 'Retirer un produit',
       'DELETE /api/cart': 'Vider le panier'
     },
-    '❤️ Favoris': {
+    ' Favoris': {
       'GET /api/favorites': 'Lister ses favoris',
       'POST /api/favorites': 'Ajouter aux favoris',
       'DELETE /api/favorites/:id': 'Retirer des favoris'
     },
-    '📦 Commandes': {
+    ' Commandes': {
       'POST /api/orders/checkout': 'Créer une commande',
       'GET /api/orders': 'Lister ses commandes',
       'GET /api/orders/:id': 'Détails d\'une commande'
     },
-    '💰 Négociations': {
+    ' Négociations': {
       'POST /api/negotiations': 'Proposer un prix',
       'GET /api/negotiations': 'Lister ses négociations',
       'PUT /api/negotiations/:id': 'Répondre à une négociation'
     },
-    '🏪 Vendeurs': {
+    ' Vendeurs': {
       'POST /api/vendors/request': 'Demander à devenir vendeur',
       'GET /api/vendors': 'Lister les vendeurs actifs'
     },
-    '👑 Admin': {
+    ' Admin': {
       'GET /api/admin/dashboard': 'Statistiques admin',
       'GET /api/admin/vendor-requests': 'Demandes vendeurs',
       'PUT /api/admin/vendors/:id/approve': 'Approuver un vendeur',
@@ -246,16 +241,16 @@ app.get('/api/routes', (req, res) => {
 
   res.json({
     success: true,
-    message: '📚 Documentation des endpoints TYDA API',
+    message: ' Documentation des endpoints TYDA API',
     baseUrl: 'https://tyda-back.onrender.com',
     authentication: 'Bearer Token dans header Authorization',
     endpoints: routes,
     notes: {
-      '🔒 Routes protégées': 'Nécessitent un token JWT valide',
-      '👑 Routes admin': 'Nécessitent le rôle admin',
-      '🏪 Routes vendeur': 'Nécessitent le rôle vendeur approuvé',
-      '📱 Format téléphone': '+225XXXXXXXX (Côte d\'Ivoire)',
-      '🔢 Format PIN': '4 chiffres minimum'
+      ' Routes protégées': 'Nécessitent un token JWT valide',
+      ' Routes admin': 'Nécessitent le rôle admin',
+      ' Routes vendeur': 'Nécessitent le rôle vendeur approuvé',
+      ' Format téléphone': '+225XXXXXXXX (Côte d\'Ivoire)',
+      ' Format PIN': '4 chiffres minimum'
     }
   });
 });
@@ -289,9 +284,9 @@ const connectDB = async () => {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
-    console.log(`✅ MongoDB connecté: ${conn.connection.host}`);
+    console.log(` MongoDB connecté: ${conn.connection.host}`);
   } catch (error) {
-    console.error('❌ Erreur de connexion MongoDB:', error.message);
+    console.error(' Erreur de connexion MongoDB:', error.message);
     process.exit(1);
   }
 };
@@ -320,17 +315,15 @@ io.use(async (socket, next) => {
   }
 });
 
-// Gestion des connexions Socket.IO pour la négociation en temps réel (après auth)
 io.on('connection', (socket) => {
   console.log('👤 Client connecté:', socket.id);
 
-  // Rejoindre une room de négociation
   socket.on('join-negotiation', (negotiationId) => {
     if (!socket.user) {
       return socket.emit('socket-error', { message: 'Authentification requise' });
     }
     socket.join(`negotiation-${negotiationId}`);
-    console.log(`🤝 Client ${socket.id} a rejoint la négociation ${negotiationId}`);
+    console.log(` Client ${socket.id} a rejoint la négociation ${negotiationId}`);
   });
 
   // Gérer les messages de négociation
@@ -339,10 +332,10 @@ io.on('connection', (socket) => {
       if (!socket.user) {
         return socket.emit('socket-error', { message: 'Authentification requise' });
       }
-      console.log('📨 Message de négociation reçu:', data);
+      console.log(' Message de négociation reçu:', data);
       const response = await negotiationBot.handleMessage(data);
-      console.log('🤖 Réponse du bot (Socket.IO):', response);
-      
+      console.log(' Réponse du bot (Socket.IO):', response);
+
       // Émettre à toute la room de négociation
       if (data.negotiationId) {
         io.to(`negotiation-${data.negotiationId}`).emit('negotiation-message', {
@@ -361,7 +354,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    console.log('👋 Client déconnecté:', socket.id);
+    console.log(' Client déconnecté:', socket.id);
   });
 });
 
@@ -370,21 +363,20 @@ const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
   await connectDB();
-  
+
   server.listen(PORT, () => {
-    console.log('🚀 ==========================================');
-    console.log(`🏪 TYDA Vente API démarré sur le port ${PORT}`);
-    console.log(`🌍 Environnement: ${process.env.NODE_ENV}`);
-    console.log(`📍 URL: http://localhost:${PORT}`);
-    console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
-    console.log('🟢 Couleurs de la Côte d\'Ivoire: Orange, Blanc, Vert');
+    console.log(' ==========================================');
+    console.log(` TYDA Vente API démarré sur le port ${PORT}`);
+    console.log(` Environnement: ${process.env.NODE_ENV}`);
+    console.log(` URL: http://localhost:${PORT}`);
+    console.log(` Health check: http://localhost:${PORT}/api/health`);
+    console.log(' Couleurs de la Côte d\'Ivoire: Orange, Blanc, Vert');
     console.log('==========================================');
   });
 };
 
-// Gestion gracieuse de l'arrêt
 process.on('SIGTERM', () => {
-  console.log('🛑 SIGTERM reçu, arrêt gracieux...');
+  console.log(' SIGTERM reçu, arrêt gracieux...');
   server.close(() => {
     mongoose.connection.close();
     process.exit(0);

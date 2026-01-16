@@ -27,7 +27,7 @@ router.post('/', auth, asyncHandler(async (req, res) => {
   }
 
   const product = await Product.findById(productId);
-  
+
   if (!product) {
     return res.status(404).json({
       success: false,
@@ -45,9 +45,9 @@ router.post('/', auth, asyncHandler(async (req, res) => {
   const userId = req.user.userId || req.user._id;
   const sessionId = `session-${userId}-${Date.now()}`;
 
-  console.log('✅ Création négociation:', { 
-    product: productId, 
-    customer: userId, 
+  console.log(' Création négociation:', {
+    product: productId,
+    customer: userId,
     vendor: product.vendor,
     originalPrice: product.price,
     proposedPrice: parseFloat(proposedPrice),
@@ -79,13 +79,13 @@ router.post('/', auth, asyncHandler(async (req, res) => {
       .populate('product')
       .populate('customer')
       .populate('vendor');
-    
+
     const NegotiationBot = require('../services/negotiationBot');
     const bot = new NegotiationBot(req.app.get('io'));
-    
+
     const botResponse = await bot.processPriceProposal(populatedNegotiation, parseFloat(proposedPrice));
     console.log('🤖 Réponse du bot:', botResponse);
-    
+
     // Ajouter la réponse du bot aux messages
     if (botResponse && botResponse.message) {
       await populatedNegotiation.addMessage('bot', botResponse.message, botResponse.suggestedPrice || botResponse.counterPrice || botResponse.finalPrice || null);
@@ -96,7 +96,7 @@ router.post('/', auth, asyncHandler(async (req, res) => {
         status: botResponse.status,
         type: botResponse.type
       };
-      
+
       // Émettre l'événement Socket.IO pour notifier le frontend
       const io = req.app.get('io');
       io.to(`negotiation-${negotiation._id}`).emit('negotiation-message', botResponseData);
@@ -137,7 +137,7 @@ router.post('/start', [
 
   // Vérifier le produit
   const product = await Product.findById(productId).populate('vendor');
-  
+
   if (!product) {
     return res.status(404).json({
       success: false,
@@ -168,7 +168,7 @@ router.post('/start', [
     return res.json({
       success: true,
       message: 'Négociation existante trouvée',
-      data: { 
+      data: {
         negotiation: existingNegotiation,
         alreadyExists: true
       }
@@ -201,7 +201,7 @@ router.post('/start', [
 
   // Message d'accueil du bot
   const welcomeMessage = `Bonjour ! Je suis TYDA Bot, votre assistant négociation. Ce produit coûte ${negotiation.originalPrice.toLocaleString()} FCFA. Quel prix souhaitez-vous proposer ?`;
-  
+
   await negotiation.addMessage('bot', welcomeMessage, null, null);
 
   res.status(201).json({
@@ -273,14 +273,14 @@ router.post('/:id/propose', [
 
   // Simuler un bot intelligent
   const bot = new NegotiationBot();
-  
+
   try {
     // Ajouter le message du client
     await negotiation.addMessage('customer', message || `Je propose ${proposedPrice} FCFA`, proposedPrice);
-    
+
     // Traiter la proposition avec le bot
     const botResponse = await bot.processPriceProposal(negotiation, proposedPrice);
-    
+
     // Ajouter la réponse du bot
     await negotiation.addMessage('bot', botResponse.message, botResponse.counterPrice, botResponse.type);
 
@@ -331,7 +331,7 @@ router.get('/:id', [
   }
 
   // Vérifier les droits d'accès
-  const hasAccess = 
+  const hasAccess =
     req.user.role === 'admin' ||
     req.user.userId === negotiation.customer._id.toString() ||
     req.user.userId === negotiation.vendor._id.toString();
@@ -362,7 +362,7 @@ router.get('/', [
 
   // Construire la requête selon le rôle
   let query = {};
-  
+
   if (req.user.role === 'client') {
     query.customer = req.user.userId;
   } else if (req.user.role === 'vendeur') {
@@ -552,11 +552,11 @@ router.post('/:id/add-to-cart', [
 
   try {
     const cart = await negotiation.addToCart();
-    
+
     res.json({
       success: true,
       message: 'Produit ajouté au panier avec le prix négocié',
-      data: { 
+      data: {
         negotiation: {
           id: negotiation._id,
           finalPrice: negotiation.finalPrice,
@@ -585,7 +585,7 @@ router.get('/stats', [
   authorize('vendeur', 'admin')
 ], asyncHandler(async (req, res) => {
   let filter = {};
-  
+
   if (req.user.role === 'vendeur') {
     filter.vendor = req.user.userId;
   }

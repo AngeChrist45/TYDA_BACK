@@ -7,7 +7,6 @@ const { asyncHandler } = require('../../../middleware/errorHandler');
 
 const router = express.Router();
 
-// GET /api/client/products
 router.get('/products', [
   optionalAuth,
   validatePagination,
@@ -95,16 +94,16 @@ router.get('/products/search/suggestions', asyncHandler(async (req, res) => {
   if (!q || q.length < 2) return res.json({ success: true, data: { suggestions: [] } });
 
   const suggestions = await Product.aggregate([
-    { $match: { status: 'valide', $or: [ { title: { $regex: q, $options: 'i' } }, { 'specifications.brand': { $regex: q, $options: 'i' } } ] } },
+    { $match: { status: 'valide', $or: [{ title: { $regex: q, $options: 'i' } }, { 'specifications.brand': { $regex: q, $options: 'i' } }] } },
     { $group: { _id: null, titles: { $addToSet: '$title' }, brands: { $addToSet: '$specifications.brand' } } },
-    { $project: { suggestions: { $slice: [ { $concatArrays: ['$titles', '$brands'] }, 10 ] } } }
+    { $project: { suggestions: { $slice: [{ $concatArrays: ['$titles', '$brands'] }, 10] } } }
   ]);
 
   res.json({ success: true, data: { suggestions: suggestions[0]?.suggestions || [] } });
 }));
 
 // GET /api/client/products/:id
-router.get('/products/:id', [ validateObjectId('id'), optionalAuth ], asyncHandler(async (req, res) => {
+router.get('/products/:id', [validateObjectId('id'), optionalAuth], asyncHandler(async (req, res) => {
   const product = await Product.findById(req.params.id)
     .populate('vendor', 'firstName lastName vendorInfo.businessName avatar address stats')
     .populate('category', 'name slug parent')
@@ -122,7 +121,7 @@ router.get('/products/:id', [ validateObjectId('id'), optionalAuth ], asyncHandl
 }));
 
 // GET /api/client/products/vendor/:vendorId
-router.get('/products/vendor/:vendorId', [ validateObjectId('vendorId'), validatePagination, optionalAuth ], asyncHandler(async (req, res) => {
+router.get('/products/vendor/:vendorId', [validateObjectId('vendorId'), validatePagination, optionalAuth], asyncHandler(async (req, res) => {
   const { page, limit, skip } = req.pagination;
   const vendorId = req.params.vendorId;
   const query = { vendor: vendorId, status: 'valide' };

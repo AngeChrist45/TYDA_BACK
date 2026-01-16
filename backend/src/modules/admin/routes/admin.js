@@ -12,9 +12,9 @@ const { asyncHandler } = require('../../../middleware/errorHandler');
 const router = express.Router();
 
 /**
- * @route   GET /api/admin/dashboard
- * @desc    Obtenir les données du tableau de bord admin
- * @access  Private (Admin)
+ * @route   
+ * @desc    
+ * @access 
  */
 router.get('/dashboard', [
   auth,
@@ -23,8 +23,8 @@ router.get('/dashboard', [
   try {
     const totalUsers = await User.countDocuments();
     const totalProducts = await Product.countDocuments({ status: 'valide' });
-    const totalOrders = 0; // TODO: connecter au modèle Order
-    const totalRevenue = 0; // TODO: calculer depuis les commandes
+    const totalOrders = 0;
+    const totalRevenue = 0;
     const pendingVendors = await User.countDocuments({
       role: 'vendeur',
       'vendorInfo.validationStatus': 'pending'
@@ -95,8 +95,7 @@ router.get('/vendor-requests', [
   authorize('admin')
 ], asyncHandler(async (req, res) => {
   try {
-    // Récupérer uniquement les utilisateurs qui ont VRAIMENT fait une demande de vendeur
-    // (ceux qui ont rempli le formulaire avec businessName)
+
     const vendors = await User.find({
       'vendorInfo.validationStatus': { $exists: true },
       'vendorInfo.businessName': { $exists: true, $ne: '' }
@@ -111,9 +110,9 @@ router.get('/vendor-requests', [
     });
   } catch (error) {
     console.error('Erreur récupération vendeurs:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Erreur lors de la récupération des vendeurs' 
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la récupération des vendeurs'
     });
   }
 }));
@@ -125,21 +124,20 @@ router.put('/vendors/:id/approve', [
 ], asyncHandler(async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
-    
+
     if (!user) {
       return res.status(404).json({ success: false, message: 'Utilisateur non trouvé' });
     }
 
     if (!user.vendorInfo || user.vendorInfo.validationStatus !== 'pending') {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Aucune demande vendeur en attente pour cet utilisateur' 
+      return res.status(400).json({
+        success: false,
+        message: 'Aucune demande vendeur en attente pour cet utilisateur'
       });
     }
 
-    // CHANGER le rôle de client à vendeur
     user.role = 'vendeur';
-    
+
     user.vendorInfo.validationStatus = 'approved';
     user.vendorInfo.validatedAt = new Date();
     user.vendorInfo.validatedBy = req.user.userId;
@@ -162,10 +160,10 @@ router.put('/vendors/:id/approve', [
 
     // Générer un nouveau token
     const newToken = jwt.sign(
-      { 
-        userId: user._id, 
+      {
+        userId: user._id,
         role: user.role,
-        phone: user.phone 
+        phone: user.phone
       },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '30d' }
@@ -181,7 +179,7 @@ router.put('/vendors/:id/approve', [
         role: user.role,
         validationStatus: user.vendorInfo.validationStatus,
         validatedAt: user.vendorInfo.validatedAt,
-        newToken // Nouveau token avec rôle vendeur
+        newToken
       }
     });
   } catch (error) {
@@ -198,22 +196,22 @@ router.put('/vendors/:id/reject', [
   try {
     const { rejectionReason } = req.body;
     if (!rejectionReason || rejectionReason.trim().length < 10) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Raison du rejet requise (minimum 10 caractères)' 
+      return res.status(400).json({
+        success: false,
+        message: 'Raison du rejet requise (minimum 10 caractères)'
       });
     }
 
     const user = await User.findById(req.params.id);
-    
+
     if (!user) {
       return res.status(404).json({ success: false, message: 'Utilisateur non trouvé' });
     }
 
     if (!user.vendorInfo || user.vendorInfo.validationStatus !== 'pending') {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Aucune demande vendeur en attente pour cet utilisateur' 
+      return res.status(400).json({
+        success: false,
+        message: 'Aucune demande vendeur en attente pour cet utilisateur'
       });
     }
 
@@ -266,24 +264,24 @@ router.put('/vendors/:id/disapprove', [
 ], asyncHandler(async (req, res) => {
   try {
     const { note } = req.body;
-    
+
     if (!note || note.trim().length < 10) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Note obligatoire (minimum 10 caractères)' 
+      return res.status(400).json({
+        success: false,
+        message: 'Note obligatoire (minimum 10 caractères)'
       });
     }
 
     const user = await User.findById(req.params.id);
-    
+
     if (!user) {
       return res.status(404).json({ success: false, message: 'Utilisateur non trouvé' });
     }
 
     if (user.role !== 'vendeur') {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Cet utilisateur n\'est pas vendeur' 
+      return res.status(400).json({
+        success: false,
+        message: 'Cet utilisateur n\'est pas vendeur'
       });
     }
 
@@ -292,12 +290,12 @@ router.put('/vendors/:id/disapprove', [
 
     // REMETTRE en client
     user.role = 'client';
-    
+
     // Initialiser vendorInfo si nécessaire
     if (!user.vendorInfo) {
       user.vendorInfo = {};
     }
-    
+
     // Mettre à jour le statut de validation
     user.vendorInfo.validationStatus = 'disapproved';
     user.vendorInfo.disapprovedAt = new Date();
@@ -320,10 +318,10 @@ router.put('/vendors/:id/disapprove', [
 
     await user.save();
 
-    console.log('[ADMIN] Vendeur désapprouvé:', { 
-      userId: user._id, 
+    console.log('[ADMIN] Vendeur désapprouvé:', {
+      userId: user._id,
       businessName: previousVendorInfo.businessName || 'N/A',
-      note: note.trim() 
+      note: note.trim()
     });
 
     res.json({
@@ -339,9 +337,9 @@ router.put('/vendors/:id/disapprove', [
     });
   } catch (error) {
     console.error('Erreur désapprobation vendeur:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Erreur lors de la désapprobation du vendeur' 
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la désapprobation du vendeur'
     });
   }
 }));
@@ -759,7 +757,7 @@ router.get('/stats/dashboard', [
 ], asyncHandler(async (req, res) => {
   try {
     const Order = require('../../../models/Order');
-    
+
     // Période pour calculer les changements (30 derniers jours)
     const now = new Date();
     const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
@@ -777,31 +775,35 @@ router.get('/stats/dashboard', [
       previousRevenue
     ] = await Promise.all([
       Order.countDocuments({ createdAt: { $gte: thirtyDaysAgo } }).catch(() => 0),
-      Order.countDocuments({ 
-        createdAt: { $gte: sixtyDaysAgo, $lt: thirtyDaysAgo } 
+      Order.countDocuments({
+        createdAt: { $gte: sixtyDaysAgo, $lt: thirtyDaysAgo }
       }).catch(() => 0),
-      User.countDocuments({ 
+      User.countDocuments({
         role: { $in: ['client', 'vendeur'] },
-        createdAt: { $gte: thirtyDaysAgo } 
+        createdAt: { $gte: thirtyDaysAgo }
       }),
-      User.countDocuments({ 
+      User.countDocuments({
         role: { $in: ['client', 'vendeur'] },
-        createdAt: { $gte: sixtyDaysAgo, $lt: thirtyDaysAgo } 
+        createdAt: { $gte: sixtyDaysAgo, $lt: thirtyDaysAgo }
       }),
       Product.countDocuments({ status: 'valide' }),
       Product.countDocuments({ status: 'en_attente' }),
       Order.aggregate([
-        { $match: { 
-          paymentStatus: 'paid',
-          createdAt: { $gte: thirtyDaysAgo }
-        }},
+        {
+          $match: {
+            paymentStatus: 'paid',
+            createdAt: { $gte: thirtyDaysAgo }
+          }
+        },
         { $group: { _id: null, total: { $sum: '$totalAmount' } } }
       ]).then(res => res[0]?.total || 0).catch(() => 0),
       Order.aggregate([
-        { $match: { 
-          paymentStatus: 'paid',
-          createdAt: { $gte: sixtyDaysAgo, $lt: thirtyDaysAgo }
-        }},
+        {
+          $match: {
+            paymentStatus: 'paid',
+            createdAt: { $gte: sixtyDaysAgo, $lt: thirtyDaysAgo }
+          }
+        },
         { $group: { _id: null, total: { $sum: '$totalAmount' } } }
       ]).then(res => res[0]?.total || 0).catch(() => 0)
     ]);
@@ -860,8 +862,8 @@ router.get('/stats/dashboard', [
     });
   } catch (error) {
     console.error('Erreur stats dashboard:', error);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       message: 'Erreur lors du chargement des statistiques',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
@@ -890,9 +892,9 @@ router.get('/products', [
     });
   } catch (error) {
     console.error('Erreur récupération produits:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Erreur lors de la récupération des produits' 
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la récupération des produits'
     });
   }
 }));
@@ -909,11 +911,11 @@ router.delete('/products/:id', [
 ], asyncHandler(async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
-    
+
     if (!product) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Produit non trouvé' 
+      return res.status(404).json({
+        success: false,
+        message: 'Produit non trouvé'
       });
     }
 
@@ -925,9 +927,9 @@ router.delete('/products/:id', [
     });
   } catch (error) {
     console.error('Erreur suppression produit:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Erreur lors de la suppression du produit' 
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la suppression du produit'
     });
   }
 }));
@@ -943,7 +945,7 @@ router.get('/orders', [
 ], asyncHandler(async (req, res) => {
   try {
     const Order = require('../../../models/Order');
-    
+
     const orders = await Order.find()
       .populate('customer', 'firstName lastName email phone')
       .populate({
@@ -963,9 +965,9 @@ router.get('/orders', [
     });
   } catch (error) {
     console.error('Erreur récupération commandes:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Erreur lors de la récupération des commandes' 
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la récupération des commandes'
     });
   }
 }));
@@ -987,18 +989,18 @@ router.put('/orders/:id/status', [
 
     const validStatuses = ['en_attente', 'confirme', 'prepare', 'expedie', 'livre', 'annule'];
     if (!validStatuses.includes(status)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Statut invalide' 
+      return res.status(400).json({
+        success: false,
+        message: 'Statut invalide'
       });
     }
 
     const order = await Order.findById(req.params.id);
-    
+
     if (!order) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Commande non trouvée' 
+      return res.status(404).json({
+        success: false,
+        message: 'Commande non trouvée'
       });
     }
 
@@ -1017,7 +1019,7 @@ router.put('/orders/:id/status', [
     if (status === 'annule' && oldStatus !== 'annule') {
       console.log('🔄 Commande annulée, restauration du stock...');
       const Product = require('../../../models/Product');
-      
+
       for (const item of order.items) {
         const product = await Product.findById(item.product);
         if (product) {
@@ -1069,9 +1071,9 @@ router.put('/orders/:id/status', [
     });
   } catch (error) {
     console.error('Erreur mise à jour commande:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Erreur lors de la mise à jour de la commande' 
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la mise à jour de la commande'
     });
   }
 }));
@@ -1097,9 +1099,9 @@ router.get('/categories', [
     });
   } catch (error) {
     console.error('Erreur récupération catégories:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Erreur lors de la récupération des catégories' 
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la récupération des catégories'
     });
   }
 }));
@@ -1117,9 +1119,9 @@ router.post('/categories', [
     const { name, description, parent, icon, isActive } = req.body;
 
     if (!name) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Le nom est requis' 
+      return res.status(400).json({
+        success: false,
+        message: 'Le nom est requis'
       });
     }
 
@@ -1140,9 +1142,9 @@ router.post('/categories', [
     });
   } catch (error) {
     console.error('Erreur création catégorie:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Erreur lors de la création de la catégorie' 
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la création de la catégorie'
     });
   }
 }));
@@ -1161,11 +1163,11 @@ router.put('/categories/:id', [
     const { name, description, parent, icon, isActive } = req.body;
 
     const category = await Category.findById(req.params.id);
-    
+
     if (!category) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Catégorie non trouvée' 
+      return res.status(404).json({
+        success: false,
+        message: 'Catégorie non trouvée'
       });
     }
 
@@ -1184,9 +1186,9 @@ router.put('/categories/:id', [
     });
   } catch (error) {
     console.error('Erreur mise à jour catégorie:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Erreur lors de la mise à jour de la catégorie' 
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la mise à jour de la catégorie'
     });
   }
 }));
@@ -1203,20 +1205,20 @@ router.delete('/categories/:id', [
 ], asyncHandler(async (req, res) => {
   try {
     const category = await Category.findById(req.params.id);
-    
+
     if (!category) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Catégorie non trouvée' 
+      return res.status(404).json({
+        success: false,
+        message: 'Catégorie non trouvée'
       });
     }
 
     // Vérifier s'il y a des produits liés
     const productCount = await Product.countDocuments({ category: req.params.id });
     if (productCount > 0) {
-      return res.status(400).json({ 
-        success: false, 
-        message: `Impossible de supprimer : ${productCount} produit(s) utilisent cette catégorie` 
+      return res.status(400).json({
+        success: false,
+        message: `Impossible de supprimer : ${productCount} produit(s) utilisent cette catégorie`
       });
     }
 
@@ -1228,9 +1230,9 @@ router.delete('/categories/:id', [
     });
   } catch (error) {
     console.error('Erreur suppression catégorie:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Erreur lors de la suppression de la catégorie' 
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la suppression de la catégorie'
     });
   }
 }));
@@ -1246,7 +1248,7 @@ router.get('/orders', [
 ], asyncHandler(async (req, res) => {
   try {
     const { status, startDate, endDate, page = 1, limit = 20 } = req.query;
-    
+
     // Construire le filtre
     const filter = {};
     if (status) filter.status = status;
@@ -1257,7 +1259,7 @@ router.get('/orders', [
     }
 
     const skip = (page - 1) * limit;
-    
+
     const orders = await Order.find(filter)
       .populate('customer', 'firstName lastName phone email')
       .populate({
@@ -1276,7 +1278,7 @@ router.get('/orders', [
     // Grouper les commandes par vendeur
     const ordersByVendor = orders.map(order => {
       const vendorGroups = {};
-      
+
       order.items.forEach(item => {
         const vendorId = item.vendor._id.toString();
         if (!vendorGroups[vendorId]) {
@@ -1310,9 +1312,9 @@ router.get('/orders', [
     });
   } catch (error) {
     console.error('Erreur récupération commandes admin:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Erreur lors de la récupération des commandes' 
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la récupération des commandes'
     });
   }
 }));
@@ -1330,9 +1332,9 @@ router.post('/orders/:id/notify-vendor', [
     const { vendorId, message } = req.body;
 
     if (!vendorId) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'ID du vendeur requis' 
+      return res.status(400).json({
+        success: false,
+        message: 'ID du vendeur requis'
       });
     }
 
@@ -1341,17 +1343,17 @@ router.post('/orders/:id/notify-vendor', [
       .populate('items.product', 'name images');
 
     if (!order) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Commande non trouvée' 
+      return res.status(404).json({
+        success: false,
+        message: 'Commande non trouvée'
       });
     }
 
     const vendor = await User.findById(vendorId);
     if (!vendor || vendor.vendorInfo?.validationStatus !== 'approved') {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Vendeur non trouvé ou non approuvé' 
+      return res.status(404).json({
+        success: false,
+        message: 'Vendeur non trouvé ou non approuvé'
       });
     }
 
@@ -1361,15 +1363,15 @@ router.post('/orders/:id/notify-vendor', [
     );
 
     if (vendorItems.length === 0) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Aucun produit de ce vendeur dans cette commande' 
+      return res.status(400).json({
+        success: false,
+        message: 'Aucun produit de ce vendeur dans cette commande'
       });
     }
 
     // Calculer le total pour le vendeur
     const vendorTotal = vendorItems.reduce(
-      (sum, item) => sum + (item.price * item.quantity), 
+      (sum, item) => sum + (item.price * item.quantity),
       0
     );
 
@@ -1403,9 +1405,9 @@ router.post('/orders/:id/notify-vendor', [
     });
   } catch (error) {
     console.error('Erreur notification vendeur:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Erreur lors de la notification du vendeur' 
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la notification du vendeur'
     });
   }
 }));
@@ -1424,17 +1426,17 @@ router.put('/orders/:id/status', [
 
     const validStatuses = ['en_attente', 'confirme', 'prepare', 'expedie', 'livre', 'annule'];
     if (!validStatuses.includes(status)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Statut invalide' 
+      return res.status(400).json({
+        success: false,
+        message: 'Statut invalide'
       });
     }
 
     const order = await Order.findById(req.params.id);
     if (!order) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Commande non trouvée' 
+      return res.status(404).json({
+        success: false,
+        message: 'Commande non trouvée'
       });
     }
 
@@ -1454,7 +1456,7 @@ router.put('/orders/:id/status', [
     if (status === 'annule' && oldStatus !== 'annule') {
       console.log('🔄 Commande annulée, restauration du stock...');
       const Product = require('../../../models/Product');
-      
+
       for (const item of order.items) {
         const product = await Product.findById(item.product);
         if (product) {
@@ -1462,7 +1464,7 @@ router.put('/orders/:id/status', [
           product.inventory.quantity += item.quantity;
           product.inventory.reserved = Math.max(0, product.inventory.reserved - item.quantity);
           await product.save();
-          
+
           console.log(`✅ Stock restauré pour "${product.title}": +${item.quantity} (total: ${product.inventory.quantity})`);
         }
       }
@@ -1472,14 +1474,14 @@ router.put('/orders/:id/status', [
     if (status === 'livre' && oldStatus !== 'livre') {
       console.log('📦 Commande livrée, mise à jour des réservations...');
       const Product = require('../../../models/Product');
-      
+
       for (const item of order.items) {
         const product = await Product.findById(item.product);
         if (product) {
           // Décrémenter les réservations
           product.inventory.reserved = Math.max(0, product.inventory.reserved - item.quantity);
           await product.save();
-          
+
           console.log(`✅ Réservation libérée pour "${product.title}": -${item.quantity} reserved`);
         }
       }
@@ -1517,9 +1519,9 @@ router.put('/orders/:id/status', [
     });
   } catch (error) {
     console.error('Erreur mise à jour statut commande:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Erreur lors de la mise à jour du statut' 
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la mise à jour du statut'
     });
   }
 }));

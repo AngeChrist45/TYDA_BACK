@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { userApi, vendorApi, authApi } from '../lib/api';
-import { 
-  User, MapPin, Phone, Mail, Store, Loader2, Edit2, Save, X, Shield, 
-  Calendar, Package, Heart, ShoppingBag, Bell, CheckCircle, XCircle, 
+import {
+  User, MapPin, Phone, Mail, Store, Loader2, Edit2, Save, X, Shield,
+  Calendar, Package, Heart, ShoppingBag, Bell, CheckCircle, XCircle,
   Trash2, ArrowRight, Upload, FileText, Image as ImageIcon
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -11,7 +11,7 @@ import { useNavigate } from 'react-router-dom';
 export default function Profile() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('profile'); // profile, products, notifications, vendor-request
+  const [activeTab, setActiveTab] = useState('profile');
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
   const [modal, setModal] = useState({ show: false, type: '', message: '' });
@@ -96,7 +96,7 @@ export default function Profile() {
     mutationFn: async (data) => {
       const photoBase64 = await compressAndConvertToBase64(data.photo);
       const identityDocBase64 = await compressAndConvertToBase64(data.identityDocument);
-      
+
       return vendorApi.requestVendor({
         fullName: data.fullName,
         businessName: data.businessName,
@@ -140,7 +140,7 @@ export default function Profile() {
           const canvas = document.createElement('canvas');
           let width = img.width;
           let height = img.height;
-          
+
           // Redimensionner si l'image est trop grande (max 1920px)
           const maxDimension = 1920;
           if (width > maxDimension || height > maxDimension) {
@@ -152,13 +152,13 @@ export default function Profile() {
               height = maxDimension;
             }
           }
-          
+
           canvas.width = width;
           canvas.height = height;
-          
+
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, width, height);
-          
+
           // Compresser à 80% de qualité
           const base64 = canvas.toDataURL('image/jpeg', 0.8);
           resolve(base64);
@@ -269,11 +269,10 @@ export default function Profile() {
               <nav className="p-2">
                 <button
                   onClick={() => setActiveTab('profile')}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-                    activeTab === 'profile' 
-                      ? 'bg-orange-50 text-orange-600 font-semibold' 
-                      : 'text-gray-700 hover:bg-gray-50'
-                  }`}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${activeTab === 'profile'
+                    ? 'bg-orange-50 text-orange-600 font-semibold'
+                    : 'text-gray-700 hover:bg-gray-50'
+                    }`}
                 >
                   <User className="h-5 w-5" />
                   Mon profil
@@ -282,11 +281,10 @@ export default function Profile() {
                 {isApprovedVendor && (
                   <button
                     onClick={() => setActiveTab('products')}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-                      activeTab === 'products' 
-                        ? 'bg-orange-50 text-orange-600 font-semibold' 
-                        : 'text-gray-700 hover:bg-gray-50'
-                    }`}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${activeTab === 'products'
+                      ? 'bg-orange-50 text-orange-600 font-semibold'
+                      : 'text-gray-700 hover:bg-gray-50'
+                      }`}
                   >
                     <Package className="h-5 w-5" />
                     Mes produits validés
@@ -300,11 +298,10 @@ export default function Profile() {
 
                 <button
                   onClick={() => setActiveTab('notifications')}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-                    activeTab === 'notifications' 
-                      ? 'bg-orange-50 text-orange-600 font-semibold' 
-                      : 'text-gray-700 hover:bg-gray-50'
-                  }`}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${activeTab === 'notifications'
+                    ? 'bg-orange-50 text-orange-600 font-semibold'
+                    : 'text-gray-700 hover:bg-gray-50'
+                    }`}
                 >
                   <Bell className="h-5 w-5" />
                   Notifications
@@ -318,11 +315,10 @@ export default function Profile() {
                 {!isVendor && (
                   <button
                     onClick={() => setActiveTab('vendor-request')}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-                      activeTab === 'vendor-request' 
-                        ? 'bg-orange-50 text-orange-600 font-semibold' 
-                        : 'text-gray-700 hover:bg-gray-50'
-                    }`}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${activeTab === 'vendor-request'
+                      ? 'bg-orange-50 text-orange-600 font-semibold'
+                      : 'text-gray-700 hover:bg-gray-50'
+                      }`}
                   >
                     <Store className="h-5 w-5" />
                     Devenir vendeur
@@ -502,7 +498,7 @@ export default function Profile() {
             {activeTab === 'products' && isApprovedVendor && (
               <div className="bg-white rounded-xl shadow-md p-8">
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">Mes produits validés</h2>
-                
+
                 {validatedProducts.length === 0 ? (
                   <div className="text-center py-12">
                     <Package className="h-16 w-16 text-gray-300 mx-auto mb-4" />
@@ -561,7 +557,7 @@ export default function Profile() {
             {activeTab === 'notifications' && (
               <div className="bg-white rounded-xl shadow-md p-8">
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">Notifications</h2>
-                
+
                 {notifications.length === 0 ? (
                   <div className="text-center py-12">
                     <Bell className="h-16 w-16 text-gray-300 mx-auto mb-4" />
@@ -572,13 +568,12 @@ export default function Profile() {
                     {notifications.map((notif) => {
                       const isApproval = notif.type?.includes('approved');
                       const isRejection = notif.type?.includes('rejected');
-                      
+
                       return (
                         <div
                           key={notif._id}
-                          className={`p-6 rounded-lg border-2 ${
-                            isApproval ? 'bg-green-50 border-green-300' : 'bg-red-50 border-red-300'
-                          }`}
+                          className={`p-6 rounded-lg border-2 ${isApproval ? 'bg-green-50 border-green-300' : 'bg-red-50 border-red-300'
+                            }`}
                         >
                           <div className="flex items-start gap-4">
                             <div className={`p-3 rounded-full ${isApproval ? 'bg-green-100' : 'bg-red-100'}`}>
@@ -593,26 +588,26 @@ export default function Profile() {
                                 {notif.title}
                               </h3>
                               <p className="text-gray-700 mb-2">{notif.message}</p>
-                              
+
                               {notif.data?.rejectionReason && (
                                 <div className="mt-3 p-3 bg-red-100 rounded-lg border border-red-200">
                                   <p className="text-sm font-semibold text-red-800">Motif :</p>
                                   <p className="text-sm text-red-700">{notif.data.rejectionReason}</p>
                                 </div>
                               )}
-                              
+
                               {notif.data?.productTitle && (
                                 <p className="text-sm text-gray-600 mt-2">
                                   Produit : <span className="font-semibold">{notif.data.productTitle}</span>
                                 </p>
                               )}
-                              
+
                               {notif.data?.negotiationEnabled && (
                                 <div className="mt-2 px-3 py-1 bg-green-100 border border-green-300 text-green-700 rounded text-sm inline-block">
                                   ✨ Négociation {notif.data.negotiationPercentage}%
                                 </div>
                               )}
-                              
+
                               <div className="flex items-center justify-between mt-4">
                                 <p className="text-xs text-gray-500">
                                   {new Date(notif.createdAt).toLocaleDateString('fr-FR', {
@@ -655,9 +650,9 @@ export default function Profile() {
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
-                    if (!vendorFormData.fullName || !vendorFormData.businessName || 
-                        !vendorFormData.businessDescription || !vendorFormData.businessAddress ||
-                        !vendorFormData.whatsapp || !vendorFormData.photo || !vendorFormData.identityDocument) {
+                    if (!vendorFormData.fullName || !vendorFormData.businessName ||
+                      !vendorFormData.businessDescription || !vendorFormData.businessAddress ||
+                      !vendorFormData.whatsapp || !vendorFormData.photo || !vendorFormData.identityDocument) {
                       setModal({ show: true, type: 'error', message: 'Tous les champs sont requis' });
                       return;
                     }
@@ -670,7 +665,7 @@ export default function Profile() {
                     <input
                       type="text"
                       value={vendorFormData.fullName}
-                      onChange={(e) => setVendorFormData({...vendorFormData, fullName: e.target.value})}
+                      onChange={(e) => setVendorFormData({ ...vendorFormData, fullName: e.target.value })}
                       placeholder="Ex: Jean Kouassi"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                       required
@@ -682,7 +677,7 @@ export default function Profile() {
                     <input
                       type="text"
                       value={vendorFormData.businessName}
-                      onChange={(e) => setVendorFormData({...vendorFormData, businessName: e.target.value})}
+                      onChange={(e) => setVendorFormData({ ...vendorFormData, businessName: e.target.value })}
                       placeholder="Ex: Boutique Kouassi"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                       required
@@ -693,7 +688,7 @@ export default function Profile() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">Description de l'activité *</label>
                     <textarea
                       value={vendorFormData.businessDescription}
-                      onChange={(e) => setVendorFormData({...vendorFormData, businessDescription: e.target.value})}
+                      onChange={(e) => setVendorFormData({ ...vendorFormData, businessDescription: e.target.value })}
                       placeholder="Décrivez votre activité..."
                       rows={4}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
@@ -706,7 +701,7 @@ export default function Profile() {
                     <input
                       type="text"
                       value={vendorFormData.businessAddress}
-                      onChange={(e) => setVendorFormData({...vendorFormData, businessAddress: e.target.value})}
+                      onChange={(e) => setVendorFormData({ ...vendorFormData, businessAddress: e.target.value })}
                       placeholder="Ex: Cocody, Abidjan"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                       required
@@ -718,7 +713,7 @@ export default function Profile() {
                     <input
                       type="tel"
                       value={vendorFormData.whatsapp}
-                      onChange={(e) => setVendorFormData({...vendorFormData, whatsapp: e.target.value})}
+                      onChange={(e) => setVendorFormData({ ...vendorFormData, whatsapp: e.target.value })}
                       placeholder="+225XXXXXXXX"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                       pattern="^\+225[0-9]{8,10}$"
@@ -814,11 +809,10 @@ export default function Profile() {
               <p className="text-gray-700 mb-6">{modal.message}</p>
               <button
                 onClick={() => setModal({ show: false, type: '', message: '' })}
-                className={`w-full py-3 rounded-lg font-semibold transition-colors ${
-                  modal.type === 'success'
-                    ? 'bg-green-600 hover:bg-green-700 text-white'
-                    : 'bg-red-600 hover:bg-red-700 text-white'
-                }`}
+                className={`w-full py-3 rounded-lg font-semibold transition-colors ${modal.type === 'success'
+                  ? 'bg-green-600 hover:bg-green-700 text-white'
+                  : 'bg-red-600 hover:bg-red-700 text-white'
+                  }`}
               >
                 Fermer
               </button>

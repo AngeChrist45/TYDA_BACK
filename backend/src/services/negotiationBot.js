@@ -7,8 +7,7 @@ class NegotiationBot {
     this.io = io;
     this.name = process.env.BOT_NAME || 'TYDA Bot';
     this.responseDelay = parseInt(process.env.BOT_RESPONSE_DELAY) || 2000;
-    
-    // Patterns de réponse en français (Côte d'Ivoire)
+
     this.responses = {
       greeting: [
         "Bonjour ! Je suis {botName}, votre assistant négociation. Comment puis-je vous aider ?",
@@ -61,33 +60,33 @@ class NegotiationBot {
   async handleMessage(data) {
     try {
       const { negotiationId, message, proposedPrice, sessionId, userId } = data;
-      
+
       // Récupérer la négociation
       let negotiation = await Negotiation.findById(negotiationId)
         .populate('product')
         .populate('customer')
         .populate('vendor');
-      
+
       if (!negotiation) {
         return this.createErrorResponse('Négociation introuvable');
       }
-      
+
       // Vérifier si la négociation est encore active
       if (!negotiation.isActive) {
         return this.createErrorResponse('Cette négociation n\'est plus active');
       }
-      
+
       // Ajouter le message du client
       await negotiation.addMessage('customer', message, proposedPrice);
-      
+
       // Traiter la proposition de prix
       if (proposedPrice) {
         return await this.processPriceProposal(negotiation, proposedPrice);
       }
-      
+
       // Réponse générale si pas de prix proposé
       return this.createGreetingResponse(negotiation);
-      
+
     } catch (error) {
       console.error('Erreur bot négociation:', error);
       return this.createErrorResponse('Erreur lors du traitement de votre message');
@@ -101,7 +100,7 @@ class NegotiationBot {
     const product = negotiation.product;
     const originalPrice = negotiation.originalPrice;
     const minPrice = product.minNegotiationPrice;
-    
+
     // Vérifier si le prix est valide (doit être positif)
     if (proposedPrice < 0) {
       return this.createResponse(
@@ -110,27 +109,27 @@ class NegotiationBot {
         negotiation
       );
     }
-    
+
     // Vérifier le nombre de tentatives
     if (negotiation.attempts >= negotiation.maxAttempts) {
       await negotiation.reject('Nombre maximum de tentatives atteint');
       return this.createResponse('maxAttemptsReached', { originalPrice }, negotiation);
     }
-    
+
     // Calculer la stratégie de réponse
     const strategy = this.calculateStrategy(negotiation, proposedPrice);
-    
+
     switch (strategy.action) {
       case 'accept':
         await negotiation.accept(proposedPrice);
         return this.createAcceptanceResponse(negotiation, proposedPrice);
-        
+
       case 'encourage':
         return this.createEncouragementResponse(negotiation, proposedPrice);
-        
+
       case 'reject':
         return this.createRejectionResponse(negotiation, proposedPrice, minPrice);
-        
+
       default:
         return this.createErrorResponse('Erreur de stratégie');
     }
@@ -144,37 +143,37 @@ class NegotiationBot {
     const originalPrice = negotiation.originalPrice;
     const minPrice = product.minNegotiationPrice;
     const currentAttempt = negotiation.attempts;
-    
+
     // RÈGLE SIMPLE ET CLAIRE :
     // 1. Prix proposé >= Prix original → Accepter immédiatement
     if (proposedPrice >= originalPrice) {
       return { action: 'accept' };
     }
-    
+
     // 2. Prix minimum <= Prix proposé < Prix original → Accepter
     if (proposedPrice >= minPrice) {
       return { action: 'accept' };
     }
-    
+
     // 3. Prix proposé < Prix minimum → Refuser (avec encouragement les 2 premières fois)
     if (proposedPrice < minPrice) {
       // 1ère et 2ème tentative : Encourager sans donner de prix
       if (currentAttempt <= 2) {
-        return { 
+        return {
           action: 'encourage',
           message: this.getRandomResponse('encouragement')
         };
       }
       // 3ème tentative et plus : Donner une indication de prix
-      return { 
+      return {
         action: 'reject',
-        message: this.getRandomResponse('priceRejected', { 
-          price: this.formatPrice(proposedPrice), 
-          minPrice: this.formatPrice(minPrice) 
+        message: this.getRandomResponse('priceRejected', {
+          price: this.formatPrice(proposedPrice),
+          minPrice: this.formatPrice(minPrice)
         })
       };
     }
-    
+
     // Cas par défaut (ne devrait jamais arriver avec la logique ci-dessus)
     return { action: 'reject' };
   }
@@ -185,16 +184,16 @@ class NegotiationBot {
   calculateCounterOffer(originalPrice, proposedPrice, minPrice, attemptFactor, popularityFactor) {
     // Base : milieu entre le prix proposé et le prix original
     let counterPrice = proposedPrice + (originalPrice - proposedPrice) * 0.5;
-    
+
     // Ajustement selon le nombre de tentatives (plus flexible avec le temps)
     counterPrice -= (originalPrice - minPrice) * attemptFactor * 0.3;
-    
+
     // Ajustement selon la popularité du produit
     counterPrice += (originalPrice - minPrice) * popularityFactor * 0.1;
-    
+
     // S'assurer que le prix reste dans les limites
     counterPrice = Math.max(minPrice, Math.min(originalPrice - 100, counterPrice));
-    
+
     return Math.round(counterPrice);
   }
 
@@ -222,12 +221,12 @@ class NegotiationBot {
   createAcceptanceResponse(negotiation, acceptedPrice) {
     const savings = negotiation.originalPrice - acceptedPrice;
     const savingsPercentage = Math.round((savings / negotiation.originalPrice) * 100);
-    
+
     return {
       type: 'acceptance',
       status: 'accepted',
-      message: this.getRandomResponse('priceAccepted', { 
-        price: this.formatPrice(acceptedPrice) 
+      message: this.getRandomResponse('priceAccepted', {
+        price: this.formatPrice(acceptedPrice)
       }),
       finalPrice: acceptedPrice,
       savings: savings,
@@ -340,14 +339,14 @@ class NegotiationBot {
   getRandomResponse(pattern, variables = {}) {
     const responses = this.responses[pattern] || ['Réponse non disponible'];
     const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-    
+
     // Remplacer les variables dans le message
     let message = randomResponse;
     Object.keys(variables).forEach(key => {
       const regex = new RegExp(`{${key}}`, 'g');
       message = message.replace(regex, variables[key]);
     });
-    
+
     return message;
   }
 
@@ -364,26 +363,26 @@ class NegotiationBot {
   async startNegotiation(productId, customerId, sessionId) {
     try {
       const product = await Product.findById(productId).populate('vendor');
-      
+
       if (!product) {
         throw new Error('Produit introuvable');
       }
-      
+
       if (!product.isNegotiable) {
         throw new Error('Ce produit n\'est pas négociable');
       }
-      
+
       // Vérifier s'il y a déjà une négociation active
       const existingNegotiation = await Negotiation.findOne({
         product: productId,
         customer: customerId,
         status: 'en_cours'
       });
-      
+
       if (existingNegotiation) {
         return existingNegotiation;
       }
-      
+
       // Créer une nouvelle négociation
       const negotiation = new Negotiation({
         product: productId,
@@ -398,15 +397,15 @@ class NegotiationBot {
           maxDiscount: product.negotiation.percentage
         }
       });
-      
+
       await negotiation.save();
-      
+
       // Incrémenter le compteur de négociations du produit
       product.stats.negotiationRequests += 1;
       await product.save();
-      
+
       return negotiation;
-      
+
     } catch (error) {
       console.error('Erreur création négociation:', error);
       throw error;

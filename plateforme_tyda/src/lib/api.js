@@ -15,15 +15,14 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-  
-  // Log des requêtes pour debug
-  console.log('🔵 Requête API:', {
+
+  console.log(' Requête API:', {
     method: config.method?.toUpperCase(),
     url: config.url,
     data: config.data,
     hasToken: !!token
   });
-  
+
   return config;
 });
 
@@ -32,10 +31,10 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    
+
     // Log détaillé des erreurs
     if (error.response) {
-      console.error('❌ Erreur API:', {
+      console.error(' Erreur API:', {
         status: error.response.status,
         message: error.response.data?.message || error.response.data?.error,
         code: error.response.data?.code,
@@ -44,40 +43,32 @@ api.interceptors.response.use(
         data: originalRequest.data
       });
     }
-    
+
     // Si timeout ou erreur réseau et première tentative, réessayer une fois
     if (
       (error.code === 'ECONNABORTED' || error.code === 'ERR_NETWORK' || !error.response) &&
       !originalRequest._retry
     ) {
       originalRequest._retry = true;
-      console.log('⏳ Réveil du serveur Render en cours...');
-      await new Promise(resolve => setTimeout(resolve, 3000)); // Attendre 3s
+      console.log(' Réveil du serveur Render en cours...');
+      await new Promise(resolve => setTimeout(resolve, 3000));
       return api(originalRequest);
     }
-    
+
     return Promise.reject(error);
   }
 );
 
 export const authApi = {
-  // Inscription: étape 1 - créer utilisateur et envoyer OTP
   register: (data) => api.post('/auth/register', data),
-  // Vérifier le code OTP: étape 2
   verifyOTP: (phone, code) => api.post('/auth/verify-otp', { phone, otpCode: code }),
-  // Définir le PIN: étape 3 (finaliser inscription)
   setPin: (data) => api.post('/auth/set-pin', data),
-  // Connexion avec téléphone + PIN
   login: (data) => api.post('/auth/login', data),
-  // Demander un OTP (réinitialisation)
   requestOTP: (phone) => api.post('/auth/request-otp', { phone }),
-  // Réinitialiser le PIN
   resetPin: (data) => api.post('/auth/reset-pin', data),
-  // Changer le PIN (authentifié)
   changePin: (data) => api.post('/auth/change-pin', data),
-  // Obtenir l'utilisateur connecté
   getCurrentUser: () => api.get('/auth/me'),
-  // Déconnexion
+
   logout: () => api.post('/auth/logout'),
 };
 
@@ -125,13 +116,12 @@ export const negotiationsApi = {
 
 export const vendorApi = {
   requestVendor: (data) => api.post('/vendors/request', data),
-  // Dashboard vendeur
   getDashboard: () => api.get('/vendor/dashboard'),
   getProducts: () => api.get('/vendor/products/mine'),
   getOrders: () => api.get('/vendor/orders'),
   getNotifications: () => api.get('/vendor/notifications'),
   markNotificationAsRead: (id) => api.put(`/vendor/notifications/${id}/read`),
-  // Gestion produits
+
   createProduct: (data) => {
     const formData = new FormData();
     formData.append('title', data.title);
@@ -139,11 +129,11 @@ export const vendorApi = {
     formData.append('price', data.price);
     formData.append('category', data.category);
     formData.append('inventory', JSON.stringify({ quantity: data.quantity, trackInventory: true }));
-    
+
     if (data.images && data.images.length > 0) {
       data.images.forEach(file => formData.append('images', file));
     }
-    
+
     return api.post('/vendor/products', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });

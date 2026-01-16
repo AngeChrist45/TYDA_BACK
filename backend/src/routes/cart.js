@@ -5,7 +5,7 @@ const asyncHandler = require('express-async-handler');
 const Cart = require('../models/Cart');
 const Product = require('../models/Product');
 
-// Get user cart
+
 router.get('/', auth, asyncHandler(async (req, res) => {
   const userId = req.user.userId || req.user._id;
   let cart = await Cart.findOne({ user: userId })
@@ -22,18 +22,18 @@ router.get('/', auth, asyncHandler(async (req, res) => {
 router.post('/items', auth, asyncHandler(async (req, res) => {
   const { productId, quantity = 1, negotiatedPrice } = req.body;
 
-  console.log('📦 Cart add request:', { 
-    productId, 
+  console.log(' Cart add request:', {
+    productId,
     quantity,
     negotiatedPrice,
     userId: req.user.userId || req.user._id,
-    body: req.body 
+    body: req.body
   });
 
   if (!productId) {
-    return res.status(400).json({ 
-      success: false, 
-      message: 'productId est requis' 
+    return res.status(400).json({
+      success: false,
+      message: 'productId est requis'
     });
   }
 
@@ -49,10 +49,10 @@ router.post('/items', auth, asyncHandler(async (req, res) => {
   }
 
   const existingItem = cart.items.find(item => item.product.toString() === productId);
-  
+
   // Utiliser le prix négocié si fourni, sinon le prix normal
   const finalPrice = negotiatedPrice || product.price;
-  
+
   if (existingItem) {
     existingItem.quantity += quantity;
     // Si un prix négocié est fourni, mettre à jour le prix
@@ -60,8 +60,8 @@ router.post('/items', auth, asyncHandler(async (req, res) => {
       existingItem.price = negotiatedPrice;
     }
   } else {
-    cart.items.push({ 
-      product: productId, 
+    cart.items.push({
+      product: productId,
       quantity,
       price: finalPrice
     });

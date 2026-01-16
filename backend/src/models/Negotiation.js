@@ -94,8 +94,8 @@ const negotiationSchema = new mongoose.Schema({
   // Temporisation et expiration
   expiresAt: {
     type: Date,
-    default: function() {
-      return new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h par défaut
+    default: function () {
+      return new Date(Date.now() + 24 * 60 * 60 * 1000);
     }
   },
   // Résultats et métriques
@@ -103,10 +103,10 @@ const negotiationSchema = new mongoose.Schema({
     acceptedAt: { type: Date },
     rejectedAt: { type: Date },
     reason: { type: String }, // Raison du refus ou de l'acceptation
-    customerSatisfaction: { 
-      type: Number, 
-      min: 1, 
-      max: 5 
+    customerSatisfaction: {
+      type: Number,
+      min: 1,
+      max: 5
     }, // Note de satisfaction client (optionnel)
     timeToComplete: { type: Number } // Temps en minutes pour compléter
   },
@@ -143,12 +143,12 @@ negotiationSchema.index({ vendor: 1, status: 1 });
 negotiationSchema.index({ sessionId: 1 });
 
 // Virtual pour vérifier si la négociation est active
-negotiationSchema.virtual('isActive').get(function() {
+negotiationSchema.virtual('isActive').get(function () {
   return this.status === 'en_cours' && this.expiresAt > new Date();
 });
 
 // Virtual pour calculer les économies
-negotiationSchema.virtual('calculatedSavings').get(function() {
+negotiationSchema.virtual('calculatedSavings').get(function () {
   if (this.finalPrice) {
     return this.originalPrice - this.finalPrice;
   }
@@ -156,24 +156,24 @@ negotiationSchema.virtual('calculatedSavings').get(function() {
 });
 
 // Virtual pour calculer le pourcentage d'économie
-negotiationSchema.virtual('calculatedSavingsPercentage').get(function() {
+negotiationSchema.virtual('calculatedSavingsPercentage').get(function () {
   const savings = this.calculatedSavings;
   return Math.round((savings / this.originalPrice) * 100);
 });
 
 // Virtual pour obtenir le dernier message
-negotiationSchema.virtual('lastMessage').get(function() {
+negotiationSchema.virtual('lastMessage').get(function () {
   return this.messages.length > 0 ? this.messages[this.messages.length - 1] : null;
 });
 
 // Virtual pour calculer le temps écoulé
-negotiationSchema.virtual('duration').get(function() {
+negotiationSchema.virtual('duration').get(function () {
   const endTime = this.result.acceptedAt || this.result.rejectedAt || new Date();
   return Math.round((endTime - this.createdAt) / (1000 * 60)); // en minutes
 });
 
 // Middleware pre-save pour calculer automatiquement les économies
-negotiationSchema.pre('save', function(next) {
+negotiationSchema.pre('save', function (next) {
   if (this.finalPrice) {
     this.savings = this.originalPrice - this.finalPrice;
     this.savingsPercentage = Math.round((this.savings / this.originalPrice) * 100);
@@ -182,7 +182,7 @@ negotiationSchema.pre('save', function(next) {
 });
 
 // Middleware pour gérer l'expiration automatique
-negotiationSchema.pre('save', function(next) {
+negotiationSchema.pre('save', function (next) {
   if (this.status === 'en_cours' && this.expiresAt <= new Date()) {
     this.status = 'expiree';
     this.result.rejectedAt = new Date();
@@ -192,88 +192,88 @@ negotiationSchema.pre('save', function(next) {
 });
 
 // Méthode pour ajouter un message à la conversation
-negotiationSchema.methods.addMessage = async function(sender, message, proposedPrice = null, botResponse = null) {
+negotiationSchema.methods.addMessage = async function (sender, message, proposedPrice = null, botResponse = null) {
   const newMessage = {
     sender,
     message,
     timestamp: new Date()
   };
-  
+
   // Ajouter les champs optionnels seulement s'ils ont une valeur
   if (proposedPrice !== null && proposedPrice !== undefined) {
     newMessage.proposedPrice = proposedPrice;
   }
-  
+
   if (botResponse !== null && botResponse !== undefined) {
     newMessage.botResponse = botResponse;
   }
-  
+
   this.messages.push(newMessage);
-  
+
   if (sender === 'customer' && proposedPrice) {
     this.proposedPrice = proposedPrice;
     this.attempts += 1;
   }
-  
+
   await this.save();
   return newMessage;
 };
 
 // Méthode pour accepter la négociation
-negotiationSchema.methods.accept = async function(finalPrice = null) {
+negotiationSchema.methods.accept = async function (finalPrice = null) {
   this.status = 'acceptee';
   this.finalPrice = finalPrice || this.proposedPrice;
   this.result.acceptedAt = new Date();
   this.result.reason = 'Prix accepté par le système automatique';
   this.result.timeToComplete = this.duration;
-  
+
   await this.save();
-  
+
   // Ajouter au panier automatiquement (optionnel)
   // await this.addToCart();
 };
 
 // Méthode pour refuser la négociation
-negotiationSchema.methods.reject = async function(reason = 'Prix trop bas') {
+negotiationSchema.methods.reject = async function (reason = 'Prix trop bas') {
   this.status = 'refusee';
   this.result.rejectedAt = new Date();
   this.result.reason = reason;
   this.result.timeToComplete = this.duration;
-  
+
   await this.save();
 };
 
 // Méthode pour proposer un contre-prix
-negotiationSchema.methods.counterOffer = async function(counterPrice, botMessage) {
+negotiationSchema.methods.counterOffer = async function (counterPrice, botMessage) {
   this.botData.lastCounterOffer = counterPrice;
-  
+
   await this.addMessage('bot', botMessage, counterPrice, 'counter_offer');
-  
+
   // Réinitialiser le timer d'expiration
   this.expiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes supplémentaires
-  
+
   await this.save();
 };
 
 // Méthode pour ajouter au panier après acceptation
-negotiationSchema.methods.addToCart = async function() {
+negotiationSchema.methods.addToCart = async function () {
   if (this.status !== 'acceptee') {
     throw new Error('La négociation doit être acceptée pour ajouter au panier');
   }
-  
+
   const Cart = mongoose.model('Cart');
-  
+
   // Vérifier si le produit n'est pas déjà dans le panier
   let cart = await Cart.findOne({ user: this.customer });
-  
+
   if (!cart) {
     cart = new Cart({ user: this.customer, items: [] });
   }
-  
-  const existingItem = cart.items.find(item => 
+
+  const existingItem = cart.items.find(item =>
     item.product.toString() === this.product.toString()
   );
-  
+
   if (existingItem) {
     existingItem.quantity += 1;
     existingItem.negotiatedPrice = this.finalPrice;
@@ -286,18 +286,18 @@ negotiationSchema.methods.addToCart = async function() {
       negotiationId: this._id
     });
   }
-  
+
   await cart.save();
-  
+
   this.addedToCart = true;
   this.cartAddedAt = new Date();
   await this.save();
-  
+
   return cart;
 };
 
 // Méthode statique pour nettoyer les négociations expirées
-negotiationSchema.statics.cleanupExpired = async function() {
+negotiationSchema.statics.cleanupExpired = async function () {
   const expiredCount = await this.updateMany(
     {
       status: 'en_cours',
@@ -311,12 +311,12 @@ negotiationSchema.statics.cleanupExpired = async function() {
       }
     }
   );
-  
+
   return expiredCount.modifiedCount;
 };
 
 // Méthode statique pour obtenir les statistiques de négociation
-negotiationSchema.statics.getStats = async function(filter = {}) {
+negotiationSchema.statics.getStats = async function (filter = {}) {
   const stats = await this.aggregate([
     { $match: filter },
     {
@@ -341,7 +341,7 @@ negotiationSchema.statics.getStats = async function(filter = {}) {
       }
     }
   ]);
-  
+
   return stats[0] || {
     total: 0,
     accepted: 0,

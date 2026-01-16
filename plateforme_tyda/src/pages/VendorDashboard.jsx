@@ -5,7 +5,7 @@ import { Package, MessageSquare, DollarSign, ShoppingBag, ArrowRight, Loader2, T
 
 export default function VendorDashboard() {
   const navigate = useNavigate();
-  
+
   const { data: profileData, isLoading: profileLoading } = useQuery({
     queryKey: ['profile'],
     queryFn: async () => {
@@ -148,7 +148,7 @@ export default function VendorDashboard() {
             <p className="text-sm text-orange-800 mb-4">
               Consultez notre guide vendeur pour maximiser vos ventes
             </p>
-            <button 
+            <button
               onClick={() => navigate('/vendor/products')}
               className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-all font-semibold"
             >
@@ -172,7 +172,7 @@ function StatCard({ title, value, icon: Icon, color, onClick }) {
   };
 
   return (
-    <div 
+    <div
       onClick={onClick}
       className={`bg-white border rounded-xl p-6 shadow-sm hover:shadow-lg transition-all ${onClick ? 'cursor-pointer transform hover:scale-105' : ''}`}
     >

@@ -7,56 +7,54 @@ const Product = require('../models/Product');
 const Order = require('../models/Order');
 const Negotiation = require('../models/Negotiation');
 
-// Request to become vendor
 router.post('/request', auth, asyncHandler(async (req, res) => {
   const { businessName, businessDescription, businessAddress, fullName, photo, identityDocument } = req.body;
 
-  // Validation
   if (!businessName || !businessDescription || !businessAddress) {
-    return res.status(400).json({ 
-      success: false, 
-      message: 'Nom de l\'entreprise, description et adresse sont requis' 
+    return res.status(400).json({
+      success: false,
+      message: 'Nom de l\'entreprise, description et adresse sont requis'
     });
   }
 
   if (!fullName) {
-    return res.status(400).json({ 
-      success: false, 
-      message: 'Nom complet requis' 
+    return res.status(400).json({
+      success: false,
+      message: 'Nom complet requis'
     });
   }
 
   if (!photo) {
-    return res.status(400).json({ 
-      success: false, 
-      message: 'Photo requise' 
+    return res.status(400).json({
+      success: false,
+      message: 'Photo requise'
     });
   }
 
   if (!identityDocument) {
-    return res.status(400).json({ 
-      success: false, 
-      message: 'Pièce d\'identité requise' 
+    return res.status(400).json({
+      success: false,
+      message: 'Pièce d\'identité requise'
     });
   }
 
   const user = await User.findById(req.user.userId);
   if (!user) {
-    return res.status(404).json({ 
-      success: false, 
-      message: 'Utilisateur introuvable' 
+    return res.status(404).json({
+      success: false,
+      message: 'Utilisateur introuvable'
     });
   }
-  
+
   if (user.role === 'vendeur') {
     return res.status(400).json({ success: false, message: 'Vous êtes déjà vendeur' });
   }
 
   // Vérifier si une demande complète existe déjà
   if (user.vendorInfo && user.vendorInfo.validationStatus === 'pending' && user.vendorInfo.businessName) {
-    return res.status(400).json({ 
-      success: false, 
-      message: 'Vous avez déjà une demande en cours de traitement' 
+    return res.status(400).json({
+      success: false,
+      message: 'Vous avez déjà une demande en cours de traitement'
     });
   }
 
@@ -122,7 +120,7 @@ router.post('/products', [auth, authorize('vendeur')], asyncHandler(async (req, 
 // Update product
 router.put('/products/:id', [auth, authorize('vendeur')], asyncHandler(async (req, res) => {
   const product = await Product.findOne({ _id: req.params.id, vendor: req.user.userId });
-  
+
   if (!product) {
     return res.status(404).json({ success: false, message: 'Produit non trouvé' });
   }
@@ -137,7 +135,7 @@ router.put('/products/:id', [auth, authorize('vendeur')], asyncHandler(async (re
 // Delete product
 router.delete('/products/:id', [auth, authorize('vendeur')], asyncHandler(async (req, res) => {
   const product = await Product.findOne({ _id: req.params.id, vendor: req.user.userId });
-  
+
   if (!product) {
     return res.status(404).json({ success: false, message: 'Produit non trouvé' });
   }
@@ -160,7 +158,7 @@ router.put('/negotiations/:id', [auth, authorize('vendeur')], asyncHandler(async
   const { action, counterOffer } = req.body;
 
   const negotiation = await Negotiation.findOne({ _id: req.params.id, vendor: req.user.userId });
-  
+
   if (!negotiation) {
     return res.status(404).json({ success: false, message: 'Négociation non trouvée' });
   }

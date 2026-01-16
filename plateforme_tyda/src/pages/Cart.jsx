@@ -3,15 +3,16 @@ import { cartApi } from '../lib/api';
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 
+
 export default function Cart() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [notification, setNotification] = useState('');
-  
+
   const { data: cartData, isLoading, error } = useQuery({
     queryKey: ['cart'],
     queryFn: cartApi.get,
-    staleTime: 1000, 
+    staleTime: 1000,
     cacheTime: 5000,
     refetchOnMount: true,
     refetchOnWindowFocus: false,
@@ -134,7 +135,7 @@ export default function Cart() {
                 >
                   {item.product.title}
                 </Link>
-                
+
                 <p className="text-xl font-bold text-[#FF6B35] mb-3">
                   {item.price?.toLocaleString()} FCFA
                 </p>
@@ -158,11 +159,11 @@ export default function Cart() {
                     >
                       −
                     </button>
-                    
+
                     <span className="px-4 py-1 border-x border-gray-300 font-medium">
                       {item.quantity}
                     </span>
-                    
+
                     <button
                       onClick={() => {
                         const maxStock = item.product.inventory?.quantity || 0;
@@ -208,18 +209,18 @@ export default function Cart() {
         <div className="lg:sticky lg:top-24 h-fit">
           <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-lg">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Résumé</h2>
-            
+
             <div className="space-y-4 mb-6">
               <div className="flex justify-between text-lg">
                 <span className="text-gray-600">Sous-total</span>
                 <span className="font-semibold text-gray-900">{total.toLocaleString()} FCFA</span>
               </div>
-              
+
               <div className="flex justify-between text-lg">
                 <span className="text-gray-600">Livraison</span>
                 <span className="font-semibold text-[#2ECC71]">Gratuite</span>
               </div>
-              
+
               <div className="border-t border-gray-200 pt-4">
                 <div className="flex justify-between items-center">
                   <span className="text-xl font-bold text-gray-900">Total</span>
@@ -239,7 +240,7 @@ export default function Cart() {
 
             <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
               <p className="text-sm text-gray-700">
-                🚀 <span className="font-semibold">Livraison rapide</span><br/>
+                🚀 <span className="font-semibold">Livraison rapide</span><br />
                 Livraison gratuite pour toutes les commandes
               </p>
             </div>

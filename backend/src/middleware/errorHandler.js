@@ -12,7 +12,6 @@ const errorHandler = (err, req, res, next) => {
     user: req.user ? req.user.userId : 'Anonyme'
   });
 
-  // Erreur de validation Mongoose
   if (err.name === 'ValidationError') {
     const message = 'Données invalides';
     const errors = Object.values(err.errors).map(val => ({
@@ -28,11 +27,10 @@ const errorHandler = (err, req, res, next) => {
     });
   }
 
-  // Erreur de duplication MongoDB (clé unique)
   if (err.code === 11000) {
     const field = Object.keys(err.keyValue)[0];
     const value = err.keyValue[field];
-    
+
     const duplicateMessages = {
       email: 'Cette adresse email est déjà utilisée',
       phone: 'Ce numéro de téléphone est déjà utilisé',
@@ -117,8 +115,8 @@ const errorHandler = (err, req, res, next) => {
   // Erreur générique serveur
   res.status(500).json({
     success: false,
-    message: process.env.NODE_ENV === 'production' 
-      ? 'Erreur serveur interne' 
+    message: process.env.NODE_ENV === 'production'
+      ? 'Erreur serveur interne'
       : err.message,
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
   });
@@ -189,7 +187,7 @@ const handle404 = (req, res) => {
 process.on('unhandledRejection', (err, promise) => {
   console.error('Promesse rejetée non gérée:', err.message);
   console.error('Promesse:', promise);
-  
+
   // En production, on pourrait fermer le serveur proprement
   if (process.env.NODE_ENV === 'production') {
     console.log('Fermeture du serveur...');
@@ -203,7 +201,7 @@ process.on('unhandledRejection', (err, promise) => {
 process.on('uncaughtException', (err) => {
   console.error('Exception non capturée:', err.message);
   console.error('Stack:', err.stack);
-  
+
   console.log('Fermeture du serveur...');
   process.exit(1);
 });

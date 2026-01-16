@@ -18,7 +18,7 @@ TYDA Vente utilise un système d'authentification **simplifié comme Wave** bas�
   "lastName": "Jean",
   "phone": "+2250707123456",
   "role": "client",
-  "email": "jean@example.com" // Optionnel
+  "email": "jean@example.com" 
 }
 ```
 
